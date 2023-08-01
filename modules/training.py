@@ -1,10 +1,7 @@
-import os
-
-os.environ["WANDB_MODE"] = "offline"
-# os.environ["WANDB_DISABLED"] = "true"
-
+# -*- coding: utf-8 -*-
 import json
 import math
+import os
 import random
 import shutil
 import sys
@@ -17,8 +14,6 @@ from pathlib import Path
 import gradio as gr
 import torch
 import transformers
-from modules.models import load_model, unload_model
-
 from datasets import Dataset, load_dataset
 from peft import (
     LoraConfig,
@@ -34,7 +29,12 @@ from modules.evaluate import (
     save_past_evaluations,
 )
 from modules.logging_colors import logger
+from modules.models import load_model, unload_model
 from modules.utils import natural_keys
+
+os.environ["WANDB_MODE"] = "offline"
+# os.environ["WANDB_DISABLED"] = "true"
+
 
 # This mapping is from a very recent commit, not yet released.
 # If not available, default to a backup map for some common model types.
@@ -42,7 +42,9 @@ try:
     from peft.utils.other import (
         TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING as model_to_lora_modules,
     )
-    from transformers.models.auto.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING_NAMES
+    from transformers.models.auto.modeling_auto import (
+        MODEL_FOR_CAUSAL_LM_MAPPING_NAMES,
+    )
 
     MODEL_CLASSES = {v: k for k, v in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES}
 except:
@@ -105,7 +107,9 @@ def create_train_interface():
         )
 
         with gr.Row():
-            lora_name = gr.Textbox(label="Name", info="The name of your new LoRA file")
+            lora_name = gr.Textbox(
+                label="Name", info="The name of your new LoRA file"
+            )
             always_override = gr.Checkbox(
                 label="Override Existing Files",
                 value=False,
@@ -214,7 +218,9 @@ def create_train_interface():
                     dataset,
                     lambda: None,
                     lambda: {
-                        "choices": utils.get_datasets("training/datasets", "json")
+                        "choices": utils.get_datasets(
+                            "training/datasets", "json"
+                        )
                     },
                     "refresh-button",
                 )
@@ -228,7 +234,9 @@ def create_train_interface():
                     eval_dataset,
                     lambda: None,
                     lambda: {
-                        "choices": utils.get_datasets("training/datasets", "json")
+                        "choices": utils.get_datasets(
+                            "training/datasets", "json"
+                        )
                     },
                     "refresh-button",
                 )
@@ -241,7 +249,11 @@ def create_train_interface():
                 ui.create_refresh_button(
                     format,
                     lambda: None,
-                    lambda: {"choices": utils.get_datasets("training/formats", "json")},
+                    lambda: {
+                        "choices": utils.get_datasets(
+                            "training/formats", "json"
+                        )
+                    },
                     "refresh-button",
                 )
 
@@ -262,7 +274,11 @@ def create_train_interface():
                 ui.create_refresh_button(
                     raw_text_file,
                     lambda: None,
-                    lambda: {"choices": utils.get_datasets("training/datasets", "txt")},
+                    lambda: {
+                        "choices": utils.get_datasets(
+                            "training/datasets", "txt"
+                        )
+                    },
                     "refresh-button",
                 )
                 hard_cut_string = gr.Textbox(
@@ -368,7 +384,9 @@ def create_train_interface():
         with gr.Row():
             with gr.Column():
                 models = gr.Dropdown(
-                    utils.get_available_models(), label="Models", multiselect=True
+                    utils.get_available_models(),
+                    label="Models",
+                    multiselect=True,
                 )
                 evaluate_text_file = gr.Dropdown(
                     choices=["wikitext", "ptb", "ptb_new"]
@@ -396,7 +414,9 @@ def create_train_interface():
                     )
 
                 with gr.Row():
-                    start_current_evaluation = gr.Button("Evaluate loaded model")
+                    start_current_evaluation = gr.Button(
+                        "Evaluate loaded model"
+                    )
                     start_evaluation = gr.Button("Evaluate selected models")
                     stop_evaluation = gr.Button("Interrupt")
 
@@ -407,8 +427,12 @@ def create_train_interface():
             value=generate_markdown_table(), interactive=True
         )
         with gr.Row():
-            save_comments = gr.Button("Save comments", elem_classes="small-button")
-            refresh_table = gr.Button("Refresh the table", elem_classes="small-button")
+            save_comments = gr.Button(
+                "Save comments", elem_classes="small-button"
+            )
+            refresh_table = gr.Button(
+                "Refresh the table", elem_classes="small-button"
+            )
 
     # Training events
 
@@ -490,9 +514,7 @@ def do_interrupt():
 
 
 def do_copy_params(lora_name: str, *args):
-    f_name = (
-        f"{shared.args.lora_dir}/{clean_path(None, lora_name)}/training_parameters.json"
-    )
+    f_name = f"{shared.args.lora_dir}/{clean_path(None, lora_name)}/training_parameters.json"
     if Path(f_name).is_file():
         with open(f_name, "r", encoding="utf-8") as format_file:
             params: dict[str, str] = json.load(format_file)
@@ -535,7 +557,9 @@ def backup_adapter(input_folder):
         adapter_file = Path(f"{input_folder}/adapter_model.bin")
         if adapter_file.is_file():
             logger.info("Backing up existing LoRA adapter...")
-            creation_date = datetime.fromtimestamp(adapter_file.stat().st_ctime)
+            creation_date = datetime.fromtimestamp(
+                adapter_file.stat().st_ctime
+            )
             creation_date_str = creation_date.strftime("Backup-%Y-%m-%d")
 
             # Create the new subfolder
@@ -681,7 +705,9 @@ def do_train(
     shared.tokenizer.padding_side = "left"
 
     def encode(text, add_bos_token):
-        result = shared.tokenizer.encode(text, truncation=True, max_length=cutoff_len)
+        result = shared.tokenizer.encode(
+            text, truncation=True, max_length=cutoff_len
+        )
         # Check if the first two tokens are BOS
         if len(result) >= 2 and result[:2] == [
             shared.tokenizer.bos_token_id,
@@ -714,7 +740,10 @@ def do_train(
             before_tokens = encode(prompt[:ind], True)
             after_tokens = encode(prompt[ind:], False)
 
-            if append_eos_token and after_tokens[-1] != shared.tokenizer.eos_token_id:
+            if (
+                append_eos_token
+                and after_tokens[-1] != shared.tokenizer.eos_token_id
+            ):
                 after_tokens.append(shared.tokenizer.eos_token_id)
 
             full_length = len(after_tokens) + len(before_tokens)
@@ -747,7 +776,8 @@ def do_train(
             logger.info("Training path directory {}".format(raw_text_file))
             raw_text = ""
             file_paths = sorted(
-                fullpath.glob("*.txt"), key=lambda path: natural_keys(path.name)
+                fullpath.glob("*.txt"),
+                key=lambda path: natural_keys(path.name),
             )
             for file_path in file_paths:
                 if file_path.is_file():
@@ -790,7 +820,8 @@ def do_train(
         del out_tokens
         if newline_favor_len > 0:
             text_chunks = [
-                cut_chunk_for_newline(x, newline_favor_len) for x in text_chunks
+                cut_chunk_for_newline(x, newline_favor_len)
+                for x in text_chunks
             ]
 
         train_data = Dataset.from_list([tokenize(x) for x in text_chunks])
@@ -808,7 +839,9 @@ def do_train(
         train_template["template_type"] = "dataset"
 
         with open(
-            clean_path("training/formats", f"{format}.json"), "r", encoding="utf-8-sig"
+            clean_path("training/formats", f"{format}.json"),
+            "r",
+            encoding="utf-8-sig",
         ) as formatFile:
             format_data: dict[str, str] = json.load(formatFile)
 
@@ -838,7 +871,8 @@ def do_train(
 
         logger.info("Loading JSON datasets...")
         data = load_dataset(
-            "json", data_files=clean_path("training/datasets", f"{dataset}.json")
+            "json",
+            data_files=clean_path("training/datasets", f"{dataset}.json"),
         )
         train_data = data["train"].map(
             generate_and_tokenize_prompt,
@@ -850,7 +884,9 @@ def do_train(
         else:
             eval_data = load_dataset(
                 "json",
-                data_files=clean_path("training/datasets", f"{eval_dataset}.json"),
+                data_files=clean_path(
+                    "training/datasets", f"{eval_dataset}.json"
+                ),
             )
             eval_data = eval_data["train"].map(
                 generate_and_tokenize_prompt,
@@ -867,7 +903,9 @@ def do_train(
             try:
                 yield f"Reloading {selected_model}..."
                 unload_model()
-                shared.model, shared.tokenizer = load_model(shared.model_name, None)
+                shared.model, shared.tokenizer = load_model(
+                    shared.model_name, None
+                )
                 if shared.model is not None:
                     print("Model reloaded OK, continue with training.")
                 else:
@@ -879,7 +917,9 @@ def do_train(
                 return exc
 
     # == Start prepping the model itself ==
-    if not hasattr(shared.model, "lm_head") or hasattr(shared.model.lm_head, "weight"):
+    if not hasattr(shared.model, "lm_head") or hasattr(
+        shared.model.lm_head, "weight"
+    ):
         logger.info("Getting model ready...")
         prepare_model_for_int8_training(shared.model)
 
@@ -901,7 +941,9 @@ def do_train(
         backup_adapter(lora_file_path)
 
     # == get model trainable params
-    model_trainable_params, model_all_params = calc_trainable_parameters(shared.model)
+    model_trainable_params, model_all_params = calc_trainable_parameters(
+        shared.model
+    )
 
     try:
         logger.info("Creating LoRA model...")
@@ -942,7 +984,9 @@ def do_train(
             control: transformers.TrainerControl,
             **kwargs,
         ):
-            tracked.current_steps = state.global_step * gradient_accumulation_steps
+            tracked.current_steps = (
+                state.global_step * gradient_accumulation_steps
+            )
             tracked.max_steps = state.max_steps * gradient_accumulation_steps
             if WANT_INTERRUPT:
                 control.should_epoch_stop = True
@@ -995,13 +1039,18 @@ def do_train(
             if WANT_INTERRUPT:
                 print("\033[1;31;1mInterrupted by user\033[0;37;0m")
 
-            print(f"\033[1;30;40mStep: {tracked.current_steps} \033[0;37;0m", end="")
+            print(
+                f"\033[1;30;40mStep: {tracked.current_steps} \033[0;37;0m",
+                end="",
+            )
             if "loss" in logs:
                 loss = float(logs["loss"])
                 if loss <= stop_at_loss:
                     control.should_epoch_stop = True
                     control.should_training_stop = True
-                    print(f"\033[1;31;1mStop Loss {stop_at_loss} reached.\033[0;37;0m")
+                    print(
+                        f"\033[1;31;1mStop Loss {stop_at_loss} reached.\033[0;37;0m"
+                    )
 
     trainer = transformers.Trainer(
         model=lora_model,
@@ -1048,14 +1097,18 @@ def do_train(
         json.dump({x: vars[x] for x in PARAMETERS}, file, indent=2)
 
     # == Save training prompt ==
-    with open(f"{lora_file_path}/training_prompt.json", "w", encoding="utf-8") as file:
+    with open(
+        f"{lora_file_path}/training_prompt.json", "w", encoding="utf-8"
+    ) as file:
         json.dump(train_template, file, indent=2)
 
     # == Main run and monitor loop ==
     logger.info("Starting training...")
     yield "Starting..."
 
-    lora_trainable_param, lora_all_param = calc_trainable_parameters(lora_model)
+    lora_trainable_param, lora_all_param = calc_trainable_parameters(
+        lora_model
+    )
 
     projections_string = ", ".join(
         [
@@ -1064,7 +1117,9 @@ def do_train(
         ]
     )
 
-    print(f"Training '{model_id}' model using ({projections_string}) projections")
+    print(
+        f"Training '{model_id}' model using ({projections_string}) projections"
+    )
 
     if lora_all_param > 0:
         print(
@@ -1074,15 +1129,25 @@ def do_train(
     train_log.update({"base_model_name": shared.model_name})
     train_log.update({"base_model_class": shared.model.__class__.__name__})
     train_log.update(
-        {"base_loaded_in_4bit": getattr(lora_model, "is_loaded_in_4bit", False)}
+        {
+            "base_loaded_in_4bit": getattr(
+                lora_model, "is_loaded_in_4bit", False
+            )
+        }
     )
     train_log.update(
-        {"base_loaded_in_8bit": getattr(lora_model, "is_loaded_in_8bit", False)}
+        {
+            "base_loaded_in_8bit": getattr(
+                lora_model, "is_loaded_in_8bit", False
+            )
+        }
     )
     train_log.update({"projections": projections_string})
 
     if stop_at_loss > 0:
-        print(f"Monitoring loss \033[1;31;1m(Auto-Stop at: {stop_at_loss})\033[0;37;0m")
+        print(
+            f"Monitoring loss \033[1;31;1m(Auto-Stop at: {stop_at_loss})\033[0;37;0m"
+        )
 
     if WANT_INTERRUPT:
         yield "Interrupted before start."
@@ -1101,7 +1166,9 @@ def do_train(
 
             # Write the log file
             Path("logs").mkdir(exist_ok=True)
-            with open(Path("logs/train_dataset_sample.json"), "w") as json_file:
+            with open(
+                Path("logs/train_dataset_sample.json"), "w"
+            ) as json_file:
                 json.dump(decoded_entries, json_file, indent=4)
 
             logger.info(
@@ -1117,7 +1184,9 @@ def do_train(
         lora_model.save_pretrained(lora_file_path)
         logger.info("LoRA training run is completed and saved.")
         # Save log
-        with open(f"{lora_file_path}/training_log.json", "w", encoding="utf-8") as file:
+        with open(
+            f"{lora_file_path}/training_log.json", "w", encoding="utf-8"
+        ) as file:
             json.dump(train_log, file, indent=2)
 
     thread = threading.Thread(target=threaded_run)

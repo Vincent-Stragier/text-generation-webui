@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import concurrent.futures
 
 import requests
@@ -15,7 +16,9 @@ def download_single(url):
 
 
 def download_urls(urls, threads=1):
-    with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=threads
+    ) as executor:
         futures = []
         for url in urls:
             future = executor.submit(download_single, url)

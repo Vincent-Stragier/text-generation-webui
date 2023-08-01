@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
 import copy
 import os
 from pathlib import Path
 
 import numpy as np
+from rwkv.model import RWKV
+from rwkv.utils import PIPELINE, PIPELINE_ARGS
 from tokenizers import Tokenizer
 
 import modules.shared as shared
@@ -14,9 +17,6 @@ os.environ["RWKV_JIT_ON"] = "1"
 os.environ["RWKV_CUDA_ON"] = (
     "1" if shared.args.rwkv_cuda_on else "0"
 )  # use CUDA kernel for seq mode (much faster)
-
-from rwkv.model import RWKV
-from rwkv.utils import PIPELINE, PIPELINE_ARGS
 
 
 class RWKVModel:
@@ -61,12 +61,17 @@ class RWKVModel:
 
         # out = self.pipeline.generate(prompt, token_count=state['max_new_tokens'], args=args, callback=callback)
         out = self.generate_from_cached_state(
-            prompt, token_count=state["max_new_tokens"], args=args, callback=callback
+            prompt,
+            token_count=state["max_new_tokens"],
+            args=args,
+            callback=callback,
         )
         return out
 
     def generate_with_streaming(self, *args, **kwargs):
-        with Iteratorize(self.generate, args, kwargs, callback=None) as generator:
+        with Iteratorize(
+            self.generate, args, kwargs, callback=None
+        ) as generator:
             reply = ""
             for token in generator:
                 reply += token
@@ -96,7 +101,9 @@ class RWKVModel:
             # forward
             tokens = self.pipeline.encode(ctx) if i == 0 else [token]
             while len(tokens) > 0:
-                out, state = self.model.forward(tokens[: args.chunk_len], state)
+                out, state = self.model.forward(
+                    tokens[: args.chunk_len], state
+                )
                 tokens = tokens[args.chunk_len :]
             if i == 0:
                 begin_token = len(all_tokens)
@@ -115,11 +122,16 @@ class RWKVModel:
                 out[n] = -float("inf")
 
             for n in occurrence:
-                out[n] -= args.alpha_presence + occurrence[n] * args.alpha_frequency
+                out[n] -= (
+                    args.alpha_presence + occurrence[n] * args.alpha_frequency
+                )
 
             # sampler
             token = self.pipeline.sample_logits(
-                out, temperature=args.temperature, top_p=args.top_p, top_k=args.top_k
+                out,
+                temperature=args.temperature,
+                top_p=args.top_p,
+                top_k=args.top_k,
             )
             if token in args.token_stop:
                 break

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import traceback
 from importlib import import_module
 from pathlib import Path
@@ -38,9 +39,9 @@ def load_pipeline(params: dict) -> Tuple[AbstractMultimodalPipeline, str]:
         model_name = shared.args.model.lower()
         for k in pipeline_modules:
             if hasattr(pipeline_modules[k], "get_pipeline_from_model_name"):
-                pipeline = getattr(pipeline_modules[k], "get_pipeline_from_model_name")(
-                    model_name, params
-                )
+                pipeline = getattr(
+                    pipeline_modules[k], "get_pipeline_from_model_name"
+                )(model_name, params)
                 if pipeline is not None:
                     return (pipeline, k)
 

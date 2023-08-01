@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 from pathlib import Path
 
@@ -5,7 +6,6 @@ import gradio as gr
 import torch
 
 from modules import shared
-
 
 with open(Path(__file__).resolve().parent / "../css/main.css", "r") as f:
     css = f.read()
@@ -145,7 +145,9 @@ def gather_interface_values(*args):
     if not shared.args.multi_user:
         shared.persistent_interface_state = output
         Path("logs").mkdir(exist_ok=True)
-        with open(Path(f"logs/session_{shared.get_mode()}_autosave.json"), "w") as f:
+        with open(
+            Path(f"logs/session_{shared.get_mode()}_autosave.json"), "w"
+        ) as f:
             f.write(json.dumps(output, indent=4))
 
     return output

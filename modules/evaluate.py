@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import datetime
 from pathlib import Path
 
@@ -62,14 +63,18 @@ def calculate_perplexity(models, input_dataset, stride, _max_length):
         data = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
         text = "\n\n".join(data["text"])
     elif input_dataset == "ptb":
-        data = load_dataset("ptb_text_only", "penn_treebank", split="validation")
+        data = load_dataset(
+            "ptb_text_only", "penn_treebank", split="validation"
+        )
         text = "\n\n".join(data["sentence"])
     elif input_dataset == "ptb_new":
         data = load_dataset("ptb_text_only", "penn_treebank", split="test")
         text = " ".join(data["sentence"])
     else:
         with open(
-            Path(f"training/datasets/{input_dataset}.txt"), "r", encoding="utf-8"
+            Path(f"training/datasets/{input_dataset}.txt"),
+            "r",
+            encoding="utf-8",
         ) as f:
             text = f.read()
 
@@ -139,11 +144,15 @@ def calculate_perplexity(models, input_dataset, stride, _max_length):
             float(ppl), shared.model_name, input_dataset, stride, _max_length
         )
         save_past_evaluations(past_evaluations)
-        cumulative_log += f"The perplexity for {shared.model_name} is: {float(ppl)}\n\n"
+        cumulative_log += (
+            f"The perplexity for {shared.model_name} is: {float(ppl)}\n\n"
+        )
         yield cumulative_log
 
 
-def add_entry_to_past_evaluations(perplexity, model, dataset, stride, max_length):
+def add_entry_to_past_evaluations(
+    perplexity, model, dataset, stride, max_length
+):
     global past_evaluations
     entry = {
         "Model": model,

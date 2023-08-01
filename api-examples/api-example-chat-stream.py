@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import asyncio
 import json
 import sys
@@ -21,9 +22,11 @@ async def run(user_input, history):
         "user_input": user_input,
         "max_new_tokens": 250,
         "history": history,
-        "mode": "instruct",  # Valid options: 'chat', 'chat-instruct', 'instruct'
+        # Valid options: 'chat', 'chat-instruct', 'instruct'
+        "mode": "instruct",
         "character": "Example",
-        "instruction_template": "Vicuna-v1.1",  # Will get autodetected if unset
+        # Will get autodetected if unset
+        "instruction_template": "Vicuna-v1.1",
         # 'context_instruct': '',  # Optional
         "your_name": "You",
         "regenerate": False,
@@ -82,13 +85,12 @@ async def print_response_stream(user_input, history):
         cur_message = new_history["visible"][-1][1][cur_len:]
         cur_len += len(cur_message)
         print(cur_message, end="")
-        sys.stdout.flush()  # If we don't flush, we won't see tokens in realtime.
+        # If we don't flush, we won't see tokens in realtime.
+        sys.stdout.flush()
 
 
 if __name__ == "__main__":
-    user_input = (
-        "Please give me a step-by-step guide on how to plant a tree in my backyard."
-    )
+    user_input = "Please give me a step-by-step guide on how to plant a tree in my backyard."
 
     # Basic example
     history = {"internal": [], "visible": []}

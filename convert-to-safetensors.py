@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 
 Converts a transformers model to safetensors format and shards it.
@@ -18,7 +19,9 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 parser = argparse.ArgumentParser(
-    formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=54)
+    formatter_class=lambda prog: argparse.HelpFormatter(
+        prog, max_help_position=54
+    )
 )
 parser.add_argument(
     "MODEL", type=str, default=None, nargs="?", help="Path to the input model."

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 from functools import partial
 
@@ -115,7 +116,9 @@ class LlamaCppModel:
         return output
 
     def generate_with_streaming(self, *args, **kwargs):
-        with Iteratorize(self.generate, args, kwargs, callback=None) as generator:
+        with Iteratorize(
+            self.generate, args, kwargs, callback=None
+        ) as generator:
             reply = ""
             for token in generator:
                 reply += token

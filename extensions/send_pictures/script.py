@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import base64
 from io import BytesIO
 
@@ -11,7 +12,9 @@ from modules.utils import gradio
 
 input_hijack = {"state": False, "value": ["", ""]}
 
-processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+processor = BlipProcessor.from_pretrained(
+    "Salesforce/blip-image-captioning-base"
+)
 model = BlipForConditionalGeneration.from_pretrained(
     "Salesforce/blip-image-captioning-base", torch_dtype=torch.float32
 ).to("cpu")
@@ -51,7 +54,10 @@ def ui():
     # Prepare the input hijack, update the interface values, call the generation function, and clear the picture
     picture_select.upload(
         lambda picture, name1, name2: input_hijack.update(
-            {"state": True, "value": generate_chat_picture(picture, name1, name2)}
+            {
+                "state": True,
+                "value": generate_chat_picture(picture, name1, name2),
+            }
         ),
         [picture_select, shared.gradio["name1"], shared.gradio["name2"]],
         None,

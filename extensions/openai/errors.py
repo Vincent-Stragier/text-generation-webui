@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 class OpenAIError(Exception):
     def __init__(self, message=None, code=500, internal_message=""):
         self.message = message

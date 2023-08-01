@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import builtins
 import io
 
@@ -42,7 +43,9 @@ def my_open(*args, **kwargs):
             b'<script src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/4.3.1/iframeResizer.contentWindow.min.js"></script>',
             b"",
         )
-        file_contents = file_contents.replace(b"cdnjs.cloudflare.com", b"127.0.0.1")
+        file_contents = file_contents.replace(
+            b"cdnjs.cloudflare.com", b"127.0.0.1"
+        )
         return io.BytesIO(file_contents)
     else:
         return original_open(*args, **kwargs)

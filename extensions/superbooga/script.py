@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 import textwrap
 
@@ -64,7 +65,9 @@ def feed_file_into_collector(file, chunk_len, chunk_sep):
         yield i
 
 
-def feed_url_into_collector(urls, chunk_len, chunk_sep, strong_cleanup, threads):
+def feed_url_into_collector(
+    urls, chunk_len, chunk_sep, strong_cleanup, threads
+):
     all_text = ""
     cumulative = ""
 
@@ -111,7 +114,9 @@ def custom_generate_chat_prompt(user_input, state, **kwargs):
     history = state["history"]
 
     if state["mode"] == "instruct":
-        results = collector.get_sorted(user_input, n_results=params["chunk_count"])
+        results = collector.get_sorted(
+            user_input, n_results=params["chunk_count"]
+        )
         additional_context = (
             "\nYour reply should be based on the context below:\n\n"
             + "\n".join(results)
@@ -125,7 +130,10 @@ def custom_generate_chat_prompt(user_input, state, **kwargs):
             output += f"{state['name2']}: {history['internal'][id_][1]}\n"
             return output
 
-        if len(history["internal"]) > params["chunk_count"] and user_input != "":
+        if (
+            len(history["internal"]) > params["chunk_count"]
+            and user_input != ""
+        ):
             chunks = []
             hist_size = len(history["internal"])
             for i in range(hist_size - 1):
@@ -148,7 +156,9 @@ def custom_generate_chat_prompt(user_input, state, **kwargs):
                 logger.warning(
                     f"Adding the following new context:\n{additional_context}"
                 )
-                state["context"] = state["context"].strip() + "\n" + additional_context
+                state["context"] = (
+                    state["context"].strip() + "\n" + additional_context
+                )
                 kwargs["history"] = {
                     "internal": [
                         history["internal"][i]
@@ -164,7 +174,9 @@ def custom_generate_chat_prompt(user_input, state, **kwargs):
 
 
 def remove_special_tokens(string):
-    pattern = r"(<\|begin-user-input\|>|<\|end-user-input\|>|<\|injection-point\|>)"
+    pattern = (
+        r"(<\|begin-user-input\|>|<\|end-user-input\|>|<\|injection-point\|>)"
+    )
     return re.sub(pattern, "", string)
 
 
@@ -173,13 +185,17 @@ def input_modifier(string):
         return string
 
     # Find the user input
-    pattern = re.compile(r"<\|begin-user-input\|>(.*?)<\|end-user-input\|>", re.DOTALL)
+    pattern = re.compile(
+        r"<\|begin-user-input\|>(.*?)<\|end-user-input\|>", re.DOTALL
+    )
     match = re.search(pattern, string)
     if match:
         user_input = match.group(1).strip()
 
         # Get the most similar chunks
-        results = collector.get_sorted(user_input, n_results=params["chunk_count"])
+        results = collector.get_sorted(
+            user_input, n_results=params["chunk_count"]
+        )
 
         # Make the injection
         string = string.replace("<|injection-point|>", "\n".join(results))

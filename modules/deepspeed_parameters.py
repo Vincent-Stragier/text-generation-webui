@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 def generate_ds_config(ds_bf16, train_batch_size, nvme_offload_dir):
     """
     DeepSpeed configuration

@@ -169,7 +169,7 @@ Use the `--gptq-for-llama` flag.
 For the models converted without `group-size`:
 
 ```
-python server.py --model llama-7b-4bit --gptq-for-llama 
+python server.py --model llama-7b-4bit --gptq-for-llama
 ```
 
 For the models converted with `group-size`:
@@ -224,5 +224,3 @@ pip install git+https://github.com/sterlind/GPTQ-for-LLaMa.git@lora_4bit
 ```
 python server.py --model llama-7b-4bit-128g --listen --lora tloen_alpaca-lora-7b --monkey-patch
 ```
-
-

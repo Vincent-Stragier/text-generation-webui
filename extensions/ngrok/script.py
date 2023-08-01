@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Adds ngrok ingress, to use add `--extension ngrok` to the command line options
 #
 # Parameters can be customized in settings.json of webui, e.g.:
@@ -9,6 +10,7 @@
 # or the README.md in this directory.
 
 import logging
+
 from modules import shared
 
 # Pick up host/port command line arguments

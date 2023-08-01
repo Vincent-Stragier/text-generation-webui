@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import asyncio
 import functools
 import threading
@@ -19,7 +20,9 @@ api_tls = threading.local()
 
 def build_parameters(body, chat=False):
     generate_params = {
-        "max_new_tokens": int(body.get("max_new_tokens", body.get("max_length", 200))),
+        "max_new_tokens": int(
+            body.get("max_new_tokens", body.get("max_length", 200))
+        ),
         "do_sample": bool(body.get("do_sample", True)),
         "temperature": float(body.get("temperature", 0.5)),
         "top_p": float(body.get("top_p", 1)),
@@ -31,7 +34,9 @@ def build_parameters(body, chat=False):
         "repetition_penalty": float(
             body.get("repetition_penalty", body.get("rep_pen", 1.1))
         ),
-        "repetition_penalty_range": int(body.get("repetition_penalty_range", 0)),
+        "repetition_penalty_range": int(
+            body.get("repetition_penalty_range", 0)
+        ),
         "encoder_repetition_penalty": float(
             body.get("encoder_repetition_penalty", 1.0)
         ),
@@ -82,11 +87,15 @@ def build_parameters(body, chat=False):
             _,
             context_instruct,
             turn_template,
-        ) = load_character_memoized(instruction_template, "", "", instruct=True)
+        ) = load_character_memoized(
+            instruction_template, "", "", instruct=True
+        )
         generate_params.update(
             {
                 "stop_at_newline": bool(
-                    body.get("stop_at_newline", shared.settings["stop_at_newline"])
+                    body.get(
+                        "stop_at_newline", shared.settings["stop_at_newline"]
+                    )
                 ),
                 "chat_generation_attempts": int(
                     body.get(
@@ -101,7 +110,9 @@ def build_parameters(body, chat=False):
                 "greeting": greeting,
                 "name1_instruct": name1_instruct,
                 "name2_instruct": name2_instruct,
-                "context_instruct": body.get("context_instruct", context_instruct),
+                "context_instruct": body.get(
+                    "context_instruct", context_instruct
+                ),
                 "turn_template": turn_template,
                 "chat-instruct_command": str(
                     body.get(
@@ -109,7 +120,9 @@ def build_parameters(body, chat=False):
                         shared.settings["chat-instruct_command"],
                     )
                 ),
-                "history": body.get("history", {"internal": [], "visible": []}),
+                "history": body.get(
+                    "history", {"internal": [], "visible": []}
+                ),
             }
         )
 
@@ -117,15 +130,21 @@ def build_parameters(body, chat=False):
 
 
 def try_start_cloudflared(
-    port: int, max_attempts: int = 3, on_start: Optional[Callable[[str], None]] = None
+    port: int,
+    max_attempts: int = 3,
+    on_start: Optional[Callable[[str], None]] = None,
 ):
     Thread(
-        target=_start_cloudflared, args=[port, max_attempts, on_start], daemon=True
+        target=_start_cloudflared,
+        args=[port, max_attempts, on_start],
+        daemon=True,
     ).start()
 
 
 def _start_cloudflared(
-    port: int, max_attempts: int = 3, on_start: Optional[Callable[[str], None]] = None
+    port: int,
+    max_attempts: int = 3,
+    on_start: Optional[Callable[[str], None]] = None,
 ):
     try:
         from flask_cloudflared import _run_cloudflared

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # preload the embedding model, useful for Docker images to prevent re-download on config change
 # Dockerfile:
 # ENV OPENEDAI_EMBEDDING_MODEL=all-mpnet-base-v2 # Optional
 # RUN python3 cache_embedded_model.py
-import os, sentence_transformers
+import os
+
+import sentence_transformers
 
 st_model = (
     os.environ["OPENEDAI_EMBEDDING_MODEL"]

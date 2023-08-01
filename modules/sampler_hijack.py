@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import math
 
 import torch
@@ -20,7 +21,9 @@ class TailFreeLogitsWarper(LogitsWarper):
     ):
         tfs = float(tfs)
         if tfs < 0 or tfs > 1.0:
-            raise ValueError(f"`tfs` has to be a float >= 0 and <= 1, but is {tfs}")
+            raise ValueError(
+                f"`tfs` has to be a float >= 0 and <= 1, but is {tfs}"
+            )
         self.tfs = tfs
         self.filter_value = filter_value
         self.min_tokens_to_keep = min_tokens_to_keep
@@ -42,9 +45,13 @@ class TailFreeLogitsWarper(LogitsWarper):
         # Centre the distribution around the cutoff as in the original implementation of the algorithm
         sorted_indices_to_remove = torch.cat(
             (
-                torch.zeros(scores.shape[0], 1, dtype=torch.bool, device=scores.device),
+                torch.zeros(
+                    scores.shape[0], 1, dtype=torch.bool, device=scores.device
+                ),
                 sorted_indices_to_remove,
-                torch.ones(scores.shape[0], 1, dtype=torch.bool, device=scores.device),
+                torch.ones(
+                    scores.shape[0], 1, dtype=torch.bool, device=scores.device
+                ),
             ),
             dim=-1,
         )
@@ -69,7 +76,9 @@ class TopALogitsWarper(LogitsWarper):
     ):
         top_a = float(top_a)
         if top_a < 0 or top_a > 1.0:
-            raise ValueError(f"`top_a` has to be a float >= 0 and <= 1, but is {top_a}")
+            raise ValueError(
+                f"`top_a` has to be a float >= 0 and <= 1, but is {top_a}"
+            )
         self.top_a = top_a
         self.filter_value = filter_value
         self.min_tokens_to_keep = min_tokens_to_keep
@@ -121,7 +130,9 @@ class MirostatLogitsWarper(LogitsWarper):
     ) -> torch.FloatTensor:
         logits = scores[0]
         sorted_logits, sorted_indices = torch.sort(logits, descending=True)
-        prob_original = torch.softmax(sorted_logits, dim=-1).tolist()  # candidates
+        prob_original = torch.softmax(
+            sorted_logits, dim=-1
+        ).tolist()  # candidates
 
         # Truncate the words with surprise values greater than mu
         for i, candidate in enumerate(prob_original):
@@ -135,9 +146,9 @@ class MirostatLogitsWarper(LogitsWarper):
         # Normalize the probabilities of the remaining words
         prob_topk = torch.softmax(sorted_logits, dim=0)
 
-        prev_i = torch.multinomial(prob_topk, num_samples=1, replacement=True).to(
-            "cuda"
-        )
+        prev_i = torch.multinomial(
+            prob_topk, num_samples=1, replacement=True
+        ).to("cuda")
 
         observed_surprise = -math.log2(prob_topk[prev_i])
         self.e = observed_surprise - self.mirostat_tau
@@ -149,7 +160,9 @@ class MirostatLogitsWarper(LogitsWarper):
         sorted_indices_to_remove[prev_i] = False
 
         indices_to_remove = sorted_indices_to_remove.unsqueeze(0).scatter(
-            1, sorted_indices.unsqueeze(0), sorted_indices_to_remove.unsqueeze(0)
+            1,
+            sorted_indices.unsqueeze(0),
+            sorted_indices_to_remove.unsqueeze(0),
         )
         scores = scores.masked_fill(indices_to_remove, self.filter_value)
         return scores
@@ -176,7 +189,9 @@ class RepetitionPenaltyLogitsProcessorWithRange(LogitsProcessor):
         score = torch.gather(scores, 1, input_ids)
 
         # if score < 0 then repetition penalty has to be multiplied to reduce the previous token probability
-        score = torch.where(score < 0, score * self.penalty, score / self.penalty)
+        score = torch.where(
+            score < 0, score * self.penalty, score / self.penalty
+        )
 
         scores.scatter_(1, input_ids, score)
         return scores
@@ -204,10 +219,14 @@ def get_logits_warper_patch(self, generation_config):
             if not isinstance(warper, TemperatureLogitsWarper):
                 warpers.remove(warper)
     else:
-        if generation_config.tfs is not None and 0.0 <= generation_config.tfs <= 1.0:
+        if (
+            generation_config.tfs is not None
+            and 0.0 <= generation_config.tfs <= 1.0
+        ):
             warpers_to_add.append(
                 TailFreeLogitsWarper(
-                    tfs=generation_config.tfs, min_tokens_to_keep=min_tokens_to_keep
+                    tfs=generation_config.tfs,
+                    min_tokens_to_keep=min_tokens_to_keep,
                 )
             )
         if (
@@ -216,7 +235,8 @@ def get_logits_warper_patch(self, generation_config):
         ):
             warpers_to_add.append(
                 TopALogitsWarper(
-                    top_a=generation_config.top_a, min_tokens_to_keep=min_tokens_to_keep
+                    top_a=generation_config.top_a,
+                    min_tokens_to_keep=min_tokens_to_keep,
                 )
             )
 
@@ -230,12 +250,17 @@ def get_logits_warper_patch(self, generation_config):
 
 def get_logits_processor_patch(self, **kwargs):
     result = self._get_logits_processor_old(**kwargs)
-    repetition_penalty_range = kwargs["generation_config"].repetition_penalty_range
+    repetition_penalty_range = kwargs[
+        "generation_config"
+    ].repetition_penalty_range
     repetition_penalty = kwargs["generation_config"].repetition_penalty
 
     if repetition_penalty_range > 0:
         for i in range(len(result)):
-            if result[i].__class__.__name__ == "RepetitionPenaltyLogitsProcessor":
+            if (
+                result[i].__class__.__name__
+                == "RepetitionPenaltyLogitsProcessor"
+            ):
                 result[i] = RepetitionPenaltyLogitsProcessorWithRange(
                     repetition_penalty, repetition_penalty_range
                 )
@@ -262,7 +287,11 @@ def hijack_samplers():
     transformers.GenerationMixin._get_logits_processor_old = (
         transformers.GenerationMixin._get_logits_processor
     )
-    transformers.GenerationMixin._get_logits_processor = get_logits_processor_patch
+    transformers.GenerationMixin._get_logits_processor = (
+        get_logits_processor_patch
+    )
 
-    transformers.GenerationConfig.__init___old = transformers.GenerationConfig.__init__
+    transformers.GenerationConfig.__init___old = (
+        transformers.GenerationConfig.__init__
+    )
     transformers.GenerationConfig.__init__ = generation_config_init_patch

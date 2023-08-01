@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import base64
 import io
 import re
@@ -62,14 +63,18 @@ def give_VRAM_priority(actor):
         reload_model()
 
     elif actor == "set":
-        print("VRAM mangement activated -- requesting Auto1111 to vacate VRAM...")
+        print(
+            "VRAM mangement activated -- requesting Auto1111 to vacate VRAM..."
+        )
         response = requests.post(
             url=f'{params["address"]}/sdapi/v1/unload-checkpoint', json=""
         )
         response.raise_for_status()
 
     elif actor == "reset":
-        print("VRAM mangement deactivated -- requesting Auto1111 to reload checkpoint")
+        print(
+            "VRAM mangement deactivated -- requesting Auto1111 to reload checkpoint"
+        )
         response = requests.post(
             url=f'{params["address"]}/sdapi/v1/reload-checkpoint', json=""
         )
@@ -128,7 +133,9 @@ def input_modifier(string):
 
     global params
 
-    if not params["mode"] == 1:  # if not in immersive/interactive mode, do nothing
+    if (
+        not params["mode"] == 1
+    ):  # if not in immersive/interactive mode, do nothing
         return string
 
     if triggers_are_in(string):  # if we're in it, check for trigger words
@@ -172,8 +179,12 @@ def get_SD_pictures(description, character):
         "negative_prompt": params["negative_prompt"],
     }
 
-    print(f'Prompting the image generator via the API on {params["address"]}...')
-    response = requests.post(url=f'{params["address"]}/sdapi/v1/txt2img', json=payload)
+    print(
+        f'Prompting the image generator via the API on {params["address"]}...'
+    )
+    response = requests.post(
+        url=f'{params["address"]}/sdapi/v1/txt2img', json=payload
+    )
     response.raise_for_status()
     r = response.json()
 
@@ -182,10 +193,10 @@ def get_SD_pictures(description, character):
         if params["save_img"]:
             img_data = base64.b64decode(img_str)
 
-            variadic = (
-                f'{date.today().strftime("%Y_%m_%d")}/{character}_{int(time.time())}'
+            variadic = f'{date.today().strftime("%Y_%m_%d")}/{character}_{int(time.time())}'
+            output_file = Path(
+                f"extensions/sd_api_pictures/outputs/{variadic}.png"
             )
-            output_file = Path(f"extensions/sd_api_pictures/outputs/{variadic}.png")
             output_file.parent.mkdir(parents=True, exist_ok=True)
 
             with open(output_file.as_posix(), "wb") as f:
@@ -196,14 +207,19 @@ def get_SD_pictures(description, character):
                 + f'<img src="/file/extensions/sd_api_pictures/outputs/{variadic}.png" alt="{description}" style="max-width: unset; max-height: unset;">\n'
             )
         else:
-            image = Image.open(io.BytesIO(base64.b64decode(img_str.split(",", 1)[0])))
+            image = Image.open(
+                io.BytesIO(base64.b64decode(img_str.split(",", 1)[0]))
+            )
             # lower the resolution of received images for the chat, otherwise the log size gets out of control quickly with all the base64 values in visible history
             image.thumbnail((300, 300))
             buffered = io.BytesIO()
             image.save(buffered, format="JPEG")
             buffered.seek(0)
             image_bytes = buffered.getvalue()
-            img_str = "data:image/jpeg;base64," + base64.b64encode(image_bytes).decode()
+            img_str = (
+                "data:image/jpeg;base64,"
+                + base64.b64encode(image_bytes).decode()
+            )
             visible_result = (
                 visible_result + f'<img src="{img_str}" alt="{description}">\n'
             )
@@ -309,19 +325,25 @@ def get_checkpoints():
         options = requests.get(url=f'{params["address"]}/sdapi/v1/options')
         options_json = options.json()
         params["sd_checkpoint"] = options_json["sd_model_checkpoint"]
-        params["checkpoint_list"] = [result["title"] for result in models.json()]
+        params["checkpoint_list"] = [
+            result["title"] for result in models.json()
+        ]
     except:
         params["sd_checkpoint"] = ""
         params["checkpoint_list"] = []
 
-    return gr.update(choices=params["checkpoint_list"], value=params["sd_checkpoint"])
+    return gr.update(
+        choices=params["checkpoint_list"], value=params["sd_checkpoint"]
+    )
 
 
 def load_checkpoint(checkpoint):
     payload = {"sd_model_checkpoint": checkpoint}
 
     try:
-        requests.post(url=f'{params["address"]}/sdapi/v1/options', json=payload)
+        requests.post(
+            url=f'{params["address"]}/sdapi/v1/options', json=payload
+        )
     except:
         pass
 
@@ -347,7 +369,11 @@ def ui():
                 value=params["address"],
                 label="Auto1111's WebUI address",
             )
-            modes_list = ["Manual", "Immersive/Interactive", "Picturebook/Adventure"]
+            modes_list = [
+                "Manual",
+                "Immersive/Interactive",
+                "Picturebook/Adventure",
+            ]
             mode = gr.Dropdown(
                 modes_list,
                 value=modes_list[params["mode"]],
@@ -396,7 +422,11 @@ def ui():
                         256, 768, value=params["width"], step=64, label="Width"
                     )
                     height = gr.Slider(
-                        256, 768, value=params["height"], step=64, label="Height"
+                        256,
+                        768,
+                        value=params["height"],
+                        step=64,
+                        label="Height",
                     )
                 with gr.Column(variant="compact", elem_id="sampler_col"):
                     with gr.Row(elem_id="sampler_row"):
@@ -420,9 +450,13 @@ def ui():
                         elem_id="steps_box",
                     )
             with gr.Row():
-                seed = gr.Number(label="Seed", value=params["seed"], elem_id="seed_box")
+                seed = gr.Number(
+                    label="Seed", value=params["seed"], elem_id="seed_box"
+                )
                 cfg_scale = gr.Number(
-                    label="CFG Scale", value=params["cfg_scale"], elem_id="cfg_box"
+                    label="CFG Scale",
+                    value=params["cfg_scale"],
+                    elem_id="cfg_box",
                 )
                 with gr.Column() as hr_options:
                     restore_faces = gr.Checkbox(
@@ -435,7 +469,11 @@ def ui():
                 visible=params["enable_hr"], elem_classes="hires_opts"
             ) as hr_options:
                 hr_scale = gr.Slider(
-                    1, 4, value=params["hr_scale"], step=0.1, label="Upscale by"
+                    1,
+                    4,
+                    value=params["hr_scale"],
+                    step=0.1,
+                    label="Upscale by",
                 )
                 denoising_strength = gr.Slider(
                     0,
@@ -456,7 +494,9 @@ def ui():
     )
     mode.select(lambda x: params.update({"mode": x}), mode, None)
     mode.select(lambda x: toggle_generation(x > 1), inputs=mode, outputs=None)
-    manage_VRAM.change(lambda x: params.update({"manage_VRAM": x}), manage_VRAM, None)
+    manage_VRAM.change(
+        lambda x: params.update({"manage_VRAM": x}), manage_VRAM, None
+    )
     manage_VRAM.change(
         lambda x: give_VRAM_priority("set" if x else "reset"),
         inputs=manage_VRAM,
@@ -478,18 +518,28 @@ def ui():
     height.change(lambda x: params.update({"height": x}), height, None)
     hr_scale.change(lambda x: params.update({"hr_scale": x}), hr_scale, None)
     denoising_strength.change(
-        lambda x: params.update({"denoising_strength": x}), denoising_strength, None
+        lambda x: params.update({"denoising_strength": x}),
+        denoising_strength,
+        None,
     )
     restore_faces.change(
         lambda x: params.update({"restore_faces": x}), restore_faces, None
     )
-    hr_upscaler.change(lambda x: params.update({"hr_upscaler": x}), hr_upscaler, None)
-    enable_hr.change(lambda x: params.update({"enable_hr": x}), enable_hr, None)
+    hr_upscaler.change(
+        lambda x: params.update({"hr_upscaler": x}), hr_upscaler, None
+    )
     enable_hr.change(
-        lambda x: hr_options.update(visible=params["enable_hr"]), enable_hr, hr_options
+        lambda x: params.update({"enable_hr": x}), enable_hr, None
+    )
+    enable_hr.change(
+        lambda x: hr_options.update(visible=params["enable_hr"]),
+        enable_hr,
+        hr_options,
     )
     update_checkpoints.click(get_checkpoints, None, checkpoint)
-    checkpoint.change(lambda x: params.update({"sd_checkpoint": x}), checkpoint, None)
+    checkpoint.change(
+        lambda x: params.update({"sd_checkpoint": x}), checkpoint, None
+    )
     checkpoint.change(load_checkpoint, checkpoint, None)
 
     sampler_name.change(
@@ -497,7 +547,13 @@ def ui():
     )
     steps.change(lambda x: params.update({"steps": x}), steps, None)
     seed.change(lambda x: params.update({"seed": x}), seed, None)
-    cfg_scale.change(lambda x: params.update({"cfg_scale": x}), cfg_scale, None)
+    cfg_scale.change(
+        lambda x: params.update({"cfg_scale": x}), cfg_scale, None
+    )
 
-    force_pic.click(lambda x: toggle_generation(True), inputs=force_pic, outputs=None)
-    suppr_pic.click(lambda x: toggle_generation(False), inputs=suppr_pic, outputs=None)
+    force_pic.click(
+        lambda x: toggle_generation(True), inputs=force_pic, outputs=None
+    )
+    suppr_pic.click(
+        lambda x: toggle_generation(False), inputs=suppr_pic, outputs=None
+    )

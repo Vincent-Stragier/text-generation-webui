@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
 import gc
+import hashlib
 import os
 import re
 import time
 from pathlib import Path
-import hashlib
 
 import torch
 import transformers
@@ -27,7 +28,10 @@ transformers.logging.set_verbosity_error()
 local_rank = None
 if shared.args.deepspeed:
     import deepspeed
-    from transformers.deepspeed import HfDeepSpeedConfig, is_deepspeed_zero3_enabled
+    from transformers.deepspeed import (
+        HfDeepSpeedConfig,
+        is_deepspeed_zero3_enabled,
+    )
 
     from modules.deepspeed_parameters import generate_ds_config
 
@@ -202,7 +206,9 @@ def huggingface_loader(model_name):
             lr_scheduler=None,
         )[0]
         model.module.eval()  # Inference
-        logger.info(f"DeepSpeed ZeRO-3 is enabled: {is_deepspeed_zero3_enabled()}")
+        logger.info(
+            f"DeepSpeed ZeRO-3 is enabled: {is_deepspeed_zero3_enabled()}"
+        )
 
     # Custom
     else:
@@ -235,7 +241,8 @@ def huggingface_loader(model_name):
                     "bnb_4bit_compute_dtype": eval(
                         "torch.{}".format(shared.args.compute_dtype)
                     )
-                    if shared.args.compute_dtype in ["bfloat16", "float16", "float32"]
+                    if shared.args.compute_dtype
+                    in ["bfloat16", "float16", "float32"]
                     else None,
                     "bnb_4bit_quant_type": shared.args.quant_type,
                     "bnb_4bit_use_double_quant": shared.args.use_double_quant,
@@ -256,7 +263,9 @@ def huggingface_loader(model_name):
                     load_in_8bit=True, llm_int8_enable_fp32_cpu_offload=True
                 )
             elif shared.args.load_in_8bit:
-                params["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
+                params["quantization_config"] = BitsAndBytesConfig(
+                    load_in_8bit=True
+                )
             elif shared.args.bf16:
                 params["torch_dtype"] = torch.bfloat16
             else:
@@ -298,7 +307,11 @@ def RWKV_loader(model_name):
 
     model = RWKVModel.from_pretrained(
         Path(f"{shared.args.model_dir}/{model_name}"),
-        dtype="fp32" if shared.args.cpu else "bf16" if shared.args.bf16 else "fp16",
+        dtype="fp32"
+        if shared.args.cpu
+        else "bf16"
+        if shared.args.bf16
+        else "fp16",
         device="cpu" if shared.args.cpu else "cuda",
     )
     tokenizer = RWKVTokenizer.from_pretrained(Path(shared.args.model_dir))
@@ -405,7 +418,9 @@ def get_max_memory_dict():
     # If --auto-devices is provided standalone, try to get a reasonable value
     # for the maximum memory of device :0
     elif shared.args.auto_devices:
-        total_mem = torch.cuda.get_device_properties(0).total_memory / (1024 * 1024)
+        total_mem = torch.cuda.get_device_properties(0).total_memory / (
+            1024 * 1024
+        )
         suggestion = round((total_mem - 1000) / 1000) * 1000
         if total_mem - suggestion < 800:
             suggestion -= 1000

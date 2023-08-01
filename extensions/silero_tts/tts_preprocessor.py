@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 
 from num2words import num2words
@@ -29,7 +30,8 @@ alphabet_map = {
     "W": " Double You ",
     "X": " Ex ",
     "Y": " Why ",
-    "Z": " Zed ",  # Zed is weird, as I (da3dsoul) am American, but most of the voice models sound British, so it matches
+    # Zed is weird, as I (da3dsoul) am American, but most of the voice models sound British, so it matches
+    "Z": " Zed ",
 }
 
 
@@ -38,7 +40,9 @@ def preprocess(string):
     # For example, you need to remove the commas in numbers before expanding them
     string = remove_surrounded_chars(string)
     string = string.replace('"', "")
-    string = string.replace("\u201D", "").replace("\u201C", "")  # right and left quote
+    string = string.replace("\u201D", "").replace(
+        "\u201C", ""
+    )  # right and left quote
     string = string.replace("\u201F", "")  # italic looking quote
     string = string.replace("\n", " ")
     string = convert_num_locale(string)
@@ -173,7 +177,9 @@ def replace_abbreviations(string):
 
 def replace_lowercase_abbreviations(string):
     # abbreviations 1 to 4 characters long, separated by dots i.e. e.g.
-    pattern = re.compile(rf"(^|[\s(.\'\[<])(([a-z]\.){{1,4}})({punctuation}|$)")
+    pattern = re.compile(
+        rf"(^|[\s(.\'\[<])(([a-z]\.){{1,4}})({punctuation}|$)"
+    )
     result = string
     while True:
         match = pattern.search(result)

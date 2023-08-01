@@ -1,6 +1,8 @@
-from extensions.openai.utils import float_list_to_base64
-from modules.text_generation import encode, decode
+# -*- coding: utf-8 -*-
 import numpy as np
+
+from extensions.openai.utils import float_list_to_base64
+from modules.text_generation import decode, encode
 
 
 def token_count(prompt):

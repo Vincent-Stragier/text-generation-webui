@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import gradio as gr
 from deep_translator import GoogleTranslator
 
@@ -122,9 +123,9 @@ def input_modifier(string):
     if not params["activate"]:
         return string
 
-    return GoogleTranslator(source=params["language string"], target="en").translate(
-        string
-    )
+    return GoogleTranslator(
+        source=params["language string"], target="en"
+    ).translate(string)
 
 
 def output_modifier(string):
@@ -134,9 +135,9 @@ def output_modifier(string):
     if not params["activate"]:
         return string
 
-    return GoogleTranslator(source="en", target=params["language string"]).translate(
-        string
-    )
+    return GoogleTranslator(
+        source="en", target=params["language string"]
+    ).translate(string)
 
 
 def bot_prefix_modifier(string):
@@ -157,15 +158,21 @@ def ui():
 
     # Gradio elements
     with gr.Row():
-        activate = gr.Checkbox(value=params["activate"], label="Activate translation")
+        activate = gr.Checkbox(
+            value=params["activate"], label="Activate translation"
+        )
 
     with gr.Row():
         language = gr.Dropdown(
-            value=language_name, choices=[k for k in language_codes], label="Language"
+            value=language_name,
+            choices=[k for k in language_codes],
+            label="Language",
         )
 
     # Event functions to update the parameters in the backend
     activate.change(lambda x: params.update({"activate": x}), activate, None)
     language.change(
-        lambda x: params.update({"language string": language_codes[x]}), language, None
+        lambda x: params.update({"language string": language_codes[x]}),
+        language,
+        None,
     )

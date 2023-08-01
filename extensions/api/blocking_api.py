@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
@@ -11,7 +12,11 @@ from modules.models_settings import (
     get_model_settings_from_yamls,
     update_model_parameters,
 )
-from modules.text_generation import encode, generate_reply, stop_everything_event
+from modules.text_generation import (
+    encode,
+    generate_reply,
+    stop_everything_event,
+)
 from modules.utils import get_available_models
 
 
@@ -125,7 +130,9 @@ class Handler(BaseHTTPRequestHandler):
                 shared.model_name = model_name
                 unload_model()
 
-                model_settings = get_model_settings_from_yamls(shared.model_name)
+                model_settings = get_model_settings_from_yamls(
+                    shared.model_name
+                )
                 shared.settings.update(model_settings)
                 update_model_parameters(model_settings, initial=True)
 
@@ -133,7 +140,9 @@ class Handler(BaseHTTPRequestHandler):
                     shared.settings["instruction_template"] = None
 
                 try:
-                    shared.model, shared.tokenizer = load_model(shared.model_name)
+                    shared.model, shared.tokenizer = load_model(
+                        shared.model_name
+                    )
                     if shared.args.lora:
                         add_lora_to_model(shared.args.lora)  # list
 
@@ -187,7 +196,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "*")
         self.send_header("Access-Control-Allow-Headers", "*")
-        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+        self.send_header(
+            "Cache-Control", "no-store, no-cache, must-revalidate"
+        )
         super().end_headers()
 
 

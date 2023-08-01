@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
@@ -45,12 +46,16 @@ class LlamacppHF(PreTrainedModel):
         use_cache = kwargs.get("use_cache", True)
         labels = kwargs.get("labels", None)
         seq = kwargs["input_ids"][0].tolist()
-        cache = kwargs["past_key_values"] if "past_key_values" in kwargs else None
+        cache = (
+            kwargs["past_key_values"] if "past_key_values" in kwargs else None
+        )
 
         # Make the forward call
         seq_tensor = torch.tensor(seq)
         if labels is None:
-            if self.cache is None or not torch.equal(self.cache, seq_tensor[:-1]):
+            if self.cache is None or not torch.equal(
+                self.cache, seq_tensor[:-1]
+            ):
                 self.model.reset()
                 self.model.eval(seq)
             else:
@@ -86,7 +91,9 @@ class LlamacppHF(PreTrainedModel):
             loss = loss_fct(shift_logits, shift_labels)
 
         return CausalLMOutputWithPast(
-            logits=logits, past_key_values=cache if use_cache else None, loss=loss
+            logits=logits,
+            past_key_values=cache if use_cache else None,
+            loss=loss,
         )
 
     @classmethod
@@ -102,7 +109,9 @@ class LlamacppHF(PreTrainedModel):
         if isinstance(pretrained_model_name_or_path, str):
             pretrained_model_name_or_path = Path(pretrained_model_name_or_path)
 
-        path = Path(f"{shared.args.model_dir}") / Path(pretrained_model_name_or_path)
+        path = Path(f"{shared.args.model_dir}") / Path(
+            pretrained_model_name_or_path
+        )
         if path.is_file():
             model_file = path
         else:

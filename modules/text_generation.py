@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import ast
 import copy
 import random
@@ -11,7 +12,11 @@ import transformers
 from transformers import LogitsProcessorList
 
 import modules.shared as shared
-from modules.callbacks import Iteratorize, Stream, _StopEverythingStoppingCriteria
+from modules.callbacks import (
+    Iteratorize,
+    Stream,
+    _StopEverythingStoppingCriteria,
+)
 from modules.extensions import apply_extensions
 from modules.html_generator import generate_4chan_html, generate_basic_html
 from modules.logging_colors import logger
@@ -31,18 +36,25 @@ def get_max_prompt_length(state):
     return state["truncation_length"] - state["max_new_tokens"]
 
 
-def encode(prompt, add_special_tokens=True, add_bos_token=True, truncation_length=None):
+def encode(
+    prompt, add_special_tokens=True, add_bos_token=True, truncation_length=None
+):
     if shared.model.__class__.__name__ in ["LlamaCppModel", "RWKVModel"]:
         input_ids = shared.tokenizer.encode(str(prompt))
         input_ids = np.array(input_ids).reshape(1, len(input_ids))
         return input_ids
     else:
         input_ids = shared.tokenizer.encode(
-            str(prompt), return_tensors="pt", add_special_tokens=add_special_tokens
+            str(prompt),
+            return_tensors="pt",
+            add_special_tokens=add_special_tokens,
         )
 
         # This is a hack for making replies more creative.
-        if not add_bos_token and input_ids[0][0] == shared.tokenizer.bos_token_id:
+        if (
+            not add_bos_token
+            and input_ids[0][0] == shared.tokenizer.bos_token_id
+        ):
             input_ids = input_ids[:, 1:]
 
     # Handling truncation
@@ -148,7 +160,9 @@ def generate_reply_wrapper(question, state, stopping_strings=None):
     reply = question if not shared.is_seq2seq else ""
     yield formatted_outputs(reply, shared.model_name)
 
-    for reply in generate_reply(question, state, stopping_strings, is_chat=False):
+    for reply in generate_reply(
+        question, state, stopping_strings, is_chat=False
+    ):
         if not shared.is_seq2seq:
             reply = question + reply
 
@@ -226,7 +240,12 @@ def _generate_reply(question, state, stopping_strings=None, is_chat=False):
         state["stream"] = True
 
     for reply in generate_func(
-        question, original_question, seed, state, stopping_strings, is_chat=is_chat
+        question,
+        original_question,
+        seed,
+        state,
+        stopping_strings,
+        is_chat=is_chat,
     ):
         reply, stop_found = apply_stopping_strings(reply, all_stop_strings)
         if is_stream:
@@ -247,7 +266,12 @@ def _generate_reply(question, state, stopping_strings=None, is_chat=False):
 
 
 def generate_reply_HF(
-    question, original_question, seed, state, stopping_strings=None, is_chat=False
+    question,
+    original_question,
+    seed,
+    state,
+    stopping_strings=None,
+    is_chat=False,
 ):
     generate_params = {}
     for k in [
@@ -313,7 +337,9 @@ def generate_reply_HF(
     )
     generate_params["eos_token_id"] = eos_token_ids
     generate_params["stopping_criteria"] = transformers.StoppingCriteriaList()
-    generate_params["stopping_criteria"].append(_StopEverythingStoppingCriteria())
+    generate_params["stopping_criteria"].append(
+        _StopEverythingStoppingCriteria()
+    )
 
     processor = state.get("logits_processor", LogitsProcessorList([]))
     # In case folks just pass in a processor by itself.
@@ -343,18 +369,26 @@ def generate_reply_HF(
         else:
 
             def generate_with_callback(callback=None, *args, **kwargs):
-                kwargs["stopping_criteria"].append(Stream(callback_func=callback))
+                kwargs["stopping_criteria"].append(
+                    Stream(callback_func=callback)
+                )
                 clear_torch_cache()
                 with torch.no_grad():
                     shared.model.generate(**kwargs)
 
             def generate_with_streaming(**kwargs):
-                return Iteratorize(generate_with_callback, [], kwargs, callback=None)
+                return Iteratorize(
+                    generate_with_callback, [], kwargs, callback=None
+                )
 
             with generate_with_streaming(**generate_params) as generator:
                 for output in generator:
                     yield get_reply_from_output_ids(
-                        output, input_ids, original_question, state, is_chat=is_chat
+                        output,
+                        input_ids,
+                        original_question,
+                        state,
+                        is_chat=is_chat,
                     )
                     if output[-1] in eos_token_ids:
                         break
@@ -364,7 +398,9 @@ def generate_reply_HF(
     finally:
         t1 = time.time()
         original_tokens = len(original_input_ids[0])
-        new_tokens = len(output) - (original_tokens if not shared.is_seq2seq else 0)
+        new_tokens = len(output) - (
+            original_tokens if not shared.is_seq2seq else 0
+        )
         print(
             f"Output generated in {(t1-t0):.2f} seconds ({new_tokens/(t1-t0):.2f} tokens/s, {new_tokens} tokens, context {original_tokens}, seed {seed})"
         )
@@ -372,7 +408,12 @@ def generate_reply_HF(
 
 
 def generate_reply_custom(
-    question, original_question, seed, state, stopping_strings=None, is_chat=False
+    question,
+    original_question,
+    seed,
+    state,
+    stopping_strings=None,
+    is_chat=False,
 ):
     seed = set_manual_seed(state["seed"])
 
@@ -394,7 +435,9 @@ def generate_reply_custom(
     finally:
         t1 = time.time()
         original_tokens = len(encode(original_question)[0])
-        new_tokens = len(encode(original_question + reply)[0]) - original_tokens
+        new_tokens = (
+            len(encode(original_question + reply)[0]) - original_tokens
+        )
         print(
             f"Output generated in {(t1-t0):.2f} seconds ({new_tokens/(t1-t0):.2f} tokens/s, {new_tokens} tokens, context {original_tokens}, seed {seed})"
         )

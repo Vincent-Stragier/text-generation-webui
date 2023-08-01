@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 from pathlib import Path
 
@@ -5,8 +6,8 @@ import elevenlabs
 import gradio as gr
 
 from modules import chat, shared
-from modules.utils import gradio
 from modules.logging_colors import logger
+from modules.utils import gradio
 
 params = {
     "activate": True,
@@ -93,7 +94,9 @@ def history_modifier(history):
     if len(history["internal"]) > 0:
         history["visible"][-1] = [
             history["visible"][-1][0],
-            history["visible"][-1][1].replace("controls autoplay>", "controls>"),
+            history["visible"][-1][1].replace(
+                "controls autoplay>", "controls>"
+            ),
         ]
 
     return history
@@ -125,9 +128,7 @@ def output_modifier(string):
         elevenlabs.save(audio, str(output_file))
 
         autoplay = "autoplay" if params["autoplay"] else ""
-        string = (
-            f'<audio src="file/{output_file.as_posix()}" controls {autoplay}></audio>'
-        )
+        string = f'<audio src="file/{output_file.as_posix()}" controls {autoplay}></audio>'
         wav_idx += 1
     except elevenlabs.api.error.UnauthenticatedRateLimitError:
         string = "🤖 ElevenLabs Unauthenticated Rate Limit Reached - Please create an API key to continue\n\n"
@@ -159,9 +160,12 @@ def ui():
     # Gradio elements
     with gr.Row():
         activate = gr.Checkbox(value=params["activate"], label="Activate TTS")
-        autoplay = gr.Checkbox(value=params["autoplay"], label="Play TTS automatically")
+        autoplay = gr.Checkbox(
+            value=params["autoplay"], label="Play TTS automatically"
+        )
         show_text = gr.Checkbox(
-            value=params["show_text"], label="Show message text under audio player"
+            value=params["show_text"],
+            label="Show message text under audio player",
         )
 
     with gr.Row():
@@ -175,7 +179,9 @@ def ui():
             api_key = gr.Textbox(value=params["api_key"], label="API Key")
             update_api_key(params["api_key"])
         else:
-            api_key = gr.Textbox(placeholder="Enter your API key.", label="API Key")
+            api_key = gr.Textbox(
+                placeholder="Enter your API key.", label="API Key"
+            )
 
     with gr.Row():
         model = gr.Dropdown(
@@ -183,7 +189,9 @@ def ui():
         )
 
     with gr.Row():
-        convert = gr.Button("Permanently replace audios with the message texts")
+        convert = gr.Button(
+            "Permanently replace audios with the message texts"
+        )
         convert_cancel = gr.Button("Cancel", visible=False)
         convert_confirm = gr.Button(
             "Confirm (cannot be undone)", variant="stop", visible=False
@@ -209,7 +217,9 @@ def ui():
             ],
             None,
             convert_arr,
-        ).then(remove_tts_from_history, gradio("history"), gradio("history")).then(
+        ).then(
+            remove_tts_from_history, gradio("history"), gradio("history")
+        ).then(
             chat.save_persistent_history,
             gradio("history", "character_menu", "mode"),
             None,
@@ -230,7 +240,9 @@ def ui():
         # Toggle message text in history
         show_text.change(
             lambda x: params.update({"show_text": x}), show_text, None
-        ).then(toggle_text_in_history, gradio("history"), gradio("history")).then(
+        ).then(
+            toggle_text_in_history, gradio("history"), gradio("history")
+        ).then(
             chat.save_persistent_history,
             gradio("history", "character_menu", "mode"),
             None,

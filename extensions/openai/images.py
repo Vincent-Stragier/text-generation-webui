@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
 import os
 import time
+
 import requests
+
 from extensions.openai.errors import *
 
 
@@ -24,7 +27,9 @@ def generations(prompt: str, size: str, response_format: str, n: int):
         "steps": 30,
     }
 
-    width, height = [int(x) for x in size.split("x")]  # ignore the restrictions on size
+    width, height = [
+        int(x) for x in size.split("x")
+    ]  # ignore the restrictions on size
 
     # to hack on better generation, edit default payload.
     payload = {

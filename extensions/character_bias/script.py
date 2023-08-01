@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 
 import gradio as gr
@@ -56,7 +57,9 @@ def bot_prefix_modifier(string):
 
 def ui():
     # Gradio elements
-    activate = gr.Checkbox(value=params["activate"], label="Activate character bias")
+    activate = gr.Checkbox(
+        value=params["activate"], label="Activate character bias"
+    )
     dropdown_string = gr.Dropdown(
         choices=bias_options,
         value=params["bias string"],
@@ -88,7 +91,9 @@ def ui():
     custom_string.change(update_custom_string, custom_string, None)
     activate.change(lambda x: params.update({"activate": x}), activate, None)
     use_custom_string.change(
-        lambda x: params.update({"use custom string": x}), use_custom_string, None
+        lambda x: params.update({"use custom string": x}),
+        use_custom_string,
+        None,
     )
 
     # Group elements together depending on the selected option

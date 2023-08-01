@@ -1,5 +1,7 @@
-import os
+# -*- coding: utf-8 -*-
 import base64
+import os
+
 import numpy as np
 
 

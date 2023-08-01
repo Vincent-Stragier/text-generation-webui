@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import base64
 import re
 from dataclasses import dataclass
@@ -30,7 +31,9 @@ class MultimodalEmbedder:
             f"Multimodal: loaded pipeline {self.pipeline.name()} from pipelines/{source} ({self.pipeline.__class__.__name__})"
         )
 
-    def _split_prompt(self, prompt: str, load_images: bool = False) -> List[PromptPart]:
+    def _split_prompt(
+        self, prompt: str, load_images: bool = False
+    ) -> List[PromptPart]:
         """Splits a prompt into a list of `PromptParts` to separate image data from text.
         It will also append `image_start` and `image_end` before and after the image, and optionally parse and load the images,
         if `load_images` is `True`.
@@ -39,14 +42,17 @@ class MultimodalEmbedder:
         curr = 0
         while True:
             match = re.search(
-                r'<img src="data:image/jpeg;base64,([A-Za-z0-9+/=]+)">', prompt[curr:]
+                r'<img src="data:image/jpeg;base64,([A-Za-z0-9+/=]+)">',
+                prompt[curr:],
             )
             if match is None:
                 # no more image tokens, append the rest of the prompt
                 if curr > 0:
                     # add image end token after last image
                     parts.append(
-                        PromptPart(text=self.pipeline.image_end() + prompt[curr:])
+                        PromptPart(
+                            text=self.pipeline.image_end() + prompt[curr:]
+                        )
                     )
                 else:
                     parts.append(PromptPart(text=prompt))
@@ -91,18 +97,22 @@ class MultimodalEmbedder:
         parts = self._split_prompt(prompt, False)
         return self._len_in_tokens_prompt_parts(parts)
 
-    def _encode_single_text(self, part: PromptPart, add_bos_token: bool) -> PromptPart:
+    def _encode_single_text(
+        self, part: PromptPart, add_bos_token: bool
+    ) -> PromptPart:
         """Encode a single prompt `part` to `input_ids`. Returns a `PromptPart`"""
         if part.is_image:
             placeholders = (
                 torch.ones((self.pipeline.num_image_embeds()))
                 * self.pipeline.placeholder_token_id()
             )
-            part.input_ids = placeholders.to(shared.model.device, dtype=torch.int64)
-        else:
-            part.input_ids = encode(part.text, add_bos_token=add_bos_token)[0].to(
+            part.input_ids = placeholders.to(
                 shared.model.device, dtype=torch.int64
             )
+        else:
+            part.input_ids = encode(part.text, add_bos_token=add_bos_token)[
+                0
+            ].to(shared.model.device, dtype=torch.int64)
         return part
 
     @staticmethod
@@ -123,7 +133,9 @@ class MultimodalEmbedder:
         encoded: List[PromptPart] = []
         for i, part in enumerate(parts):
             encoded.append(
-                self._encode_single_text(part, i == 0 and state["add_bos_token"])
+                self._encode_single_text(
+                    part, i == 0 and state["add_bos_token"]
+                )
             )
 
         # truncation:
@@ -153,7 +165,8 @@ class MultimodalEmbedder:
                     )[0]
                 )
                 if (
-                    self._len_in_tokens_prompt_parts(encoded[1:]) + len_image_start
+                    self._len_in_tokens_prompt_parts(encoded[1:])
+                    + len_image_start
                     > max_len
                 ):
                     # we can't -> remove this text, and the image
@@ -161,7 +174,9 @@ class MultimodalEmbedder:
                     removed_images += 1
                 else:
                     # we can -> just truncate the text
-                    trunc_len = self._len_in_tokens_prompt_parts(encoded) - max_len
+                    trunc_len = (
+                        self._len_in_tokens_prompt_parts(encoded) - max_len
+                    )
                     encoded[0].input_ids = encoded[0].input_ids[trunc_len:]
             elif len(encoded) > 0:
                 # only one text left, truncate it normally
@@ -179,7 +194,9 @@ class MultimodalEmbedder:
     def _embed(self, parts: List[PromptPart]) -> List[PromptPart]:
         # batch images
         image_indicies = [i for i, part in enumerate(parts) if part.is_image]
-        embedded = self.pipeline.embed_images([parts[i].image for i in image_indicies])
+        embedded = self.pipeline.embed_images(
+            [parts[i].image for i in image_indicies]
+        )
         for i, embeds in zip(image_indicies, embedded):
             parts[i].embedding = embeds
         # embed text

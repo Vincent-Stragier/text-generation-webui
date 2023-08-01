@@ -1,10 +1,13 @@
-import time
-import yaml
+# -*- coding: utf-8 -*-
 import os
-from modules import shared
+import time
+
+import yaml
+
 from extensions.openai.defaults import get_default_req_params
-from extensions.openai.utils import debug_msg
 from extensions.openai.errors import *
+from extensions.openai.utils import debug_msg
+from modules import shared
 from modules.text_generation import encode, generate_reply
 
 
@@ -48,7 +51,9 @@ def edits(instruction: str, input: str, temperature=1.0, top_p=1.0) -> dict:
                     : template.find("<|bot-message|>")
                 ].rstrip(" ")
                 if instruct["user"]:
-                    stopping_strings.extend(["\n" + instruct["user"], instruct["user"]])
+                    stopping_strings.extend(
+                        ["\n" + instruct["user"], instruct["user"]]
+                    )
 
             except Exception as e:
                 instruction_template = default_template
@@ -64,7 +69,9 @@ def edits(instruction: str, input: str, temperature=1.0, top_p=1.0) -> dict:
             "Warning: Loaded default instruction-following template (Alpaca) for model."
         )
 
-    edit_task = instruction_template.format(instruction=instruction, input=input)
+    edit_task = instruction_template.format(
+        instruction=instruction, input=input
+    )
 
     truncation_length = shared.settings["truncation_length"]
 
@@ -83,7 +90,9 @@ def edits(instruction: str, input: str, temperature=1.0, top_p=1.0) -> dict:
     req_params["add_bos_token"] = shared.settings.get(
         "add_bos_token", req_params["add_bos_token"]
     )
-    req_params["custom_stopping_strings"] = shared.settings["custom_stopping_strings"]
+    req_params["custom_stopping_strings"] = shared.settings[
+        "custom_stopping_strings"
+    ]
 
     debug_msg(
         {

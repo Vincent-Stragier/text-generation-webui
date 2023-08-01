@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import chromadb
 import posthog
 import torch
@@ -35,7 +36,9 @@ class Embedder:
 class ChromaCollector(Collecter):
     def __init__(self, embedder: Embedder):
         super().__init__()
-        self.chroma_client = chromadb.Client(Settings(anonymized_telemetry=False))
+        self.chroma_client = chromadb.Client(
+            Settings(anonymized_telemetry=False)
+        )
         self.embedder = embedder
         self.collection = self.chroma_client.create_collection(
             name="context", embedding_function=embedder.embed
@@ -49,7 +52,9 @@ class ChromaCollector(Collecter):
         self.ids = [f"id{i}" for i in range(len(texts))]
         self.collection.add(documents=texts, ids=self.ids)
 
-    def get_documents_ids_distances(self, search_strings: list[str], n_results: int):
+    def get_documents_ids_distances(
+        self, search_strings: list[str], n_results: int
+    ):
         n_results = min(len(self.ids), n_results)
         if n_results == 0:
             return [], [], []
@@ -66,7 +71,9 @@ class ChromaCollector(Collecter):
 
     # Get chunks by similarity
     def get(self, search_strings: list[str], n_results: int) -> list[str]:
-        documents, _, _ = self.get_documents_ids_distances(search_strings, n_results)
+        documents, _, _ = self.get_documents_ids_distances(
+            search_strings, n_results
+        )
         return documents
 
     # Get ids by similarity
@@ -75,8 +82,12 @@ class ChromaCollector(Collecter):
         return ids
 
     # Get chunks by similarity and then sort by insertion order
-    def get_sorted(self, search_strings: list[str], n_results: int) -> list[str]:
-        documents, ids, _ = self.get_documents_ids_distances(search_strings, n_results)
+    def get_sorted(
+        self, search_strings: list[str], n_results: int
+    ) -> list[str]:
+        documents, ids, _ = self.get_documents_ids_distances(
+            search_strings, n_results
+        )
         return [x for _, x in sorted(zip(ids, documents))]
 
     # Multiply distance by factor within [0, time_weight] where more recent is lower
@@ -110,7 +121,9 @@ class ChromaCollector(Collecter):
                 f"n_initial {n_initial} should be >= n_results {n_results}"
             )
 
-        _, ids, distances = self.get_documents_ids_distances(search_strings, n_initial)
+        _, ids, distances = self.get_documents_ids_distances(
+            search_strings, n_initial
+        )
         if do_time_weight:
             distances_w = self.apply_time_weight_to_distances(
                 ids, distances, time_weight=time_weight
@@ -129,7 +142,9 @@ class ChromaCollector(Collecter):
 
 class SentenceTransformerEmbedder(Embedder):
     def __init__(self) -> None:
-        self.model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
+        self.model = SentenceTransformer(
+            "sentence-transformers/all-mpnet-base-v2"
+        )
         self.embed = self.model.encode
 
 

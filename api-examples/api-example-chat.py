@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 
 import requests
@@ -66,9 +67,7 @@ def run(user_input, history):
 
 
 if __name__ == "__main__":
-    user_input = (
-        "Please give me a step-by-step guide on how to plant a tree in my backyard."
-    )
+    user_input = "Please give me a step-by-step guide on how to plant a tree in my backyard."
 
     # Basic example
     history = {"internal": [], "visible": []}

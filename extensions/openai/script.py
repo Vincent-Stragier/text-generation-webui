@@ -1,22 +1,21 @@
+# -*- coding: utf-8 -*-
 import json
 import os
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
 
-from modules import shared
-
-from extensions.openai.tokens import token_count, token_encode, token_decode
-import extensions.openai.models as OAImodels
+import extensions.openai.completions as OAIcompletions
 import extensions.openai.edits as OAIedits
 import extensions.openai.embeddings as OAIembeddings
 import extensions.openai.images as OAIimages
+import extensions.openai.models as OAImodels
 import extensions.openai.moderations as OAImoderations
-import extensions.openai.completions as OAIcompletions
+from extensions.openai.defaults import clamp, default, get_default_req_params
 from extensions.openai.errors import *
+from extensions.openai.tokens import token_count, token_decode, token_encode
 from extensions.openai.utils import debug_msg
-from extensions.openai.defaults import get_default_req_params, default, clamp
-
+from modules import shared
 
 params = {
     "port": int(os.environ.get("OPENEDAI_PORT"))
@@ -29,7 +28,9 @@ class Handler(BaseHTTPRequestHandler):
     def send_access_control_headers(self):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Credentials", "true")
-        self.send_header("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT")
+        self.send_header(
+            "Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT"
+        )
         self.send_header(
             "Access-Control-Allow-Headers",
             "Origin, Accept, X-Requested-With, Content-Type, "
@@ -75,7 +76,12 @@ class Handler(BaseHTTPRequestHandler):
             debug_msg(r_utf8)
 
     def openai_error(
-        self, message, code=500, error_type="APIError", param="", internal_message=""
+        self,
+        message,
+        code=500,
+        error_type="APIError",
+        param="",
+        internal_message="",
     ):
         error_resp = {
             "error": {
@@ -113,7 +119,10 @@ class Handler(BaseHTTPRequestHandler):
                 )
             except Exception as e:
                 self.openai_error(
-                    repr(e), 500, "OpenAIError", internal_message=traceback.format_exc()
+                    repr(e),
+                    500,
+                    "OpenAIError",
+                    internal_message=traceback.format_exc(),
                 )
 
         return wrapper
@@ -123,7 +132,9 @@ class Handler(BaseHTTPRequestHandler):
         debug_msg(self.requestline)
         debug_msg(self.headers)
 
-        if self.path.startswith("/v1/engines") or self.path.startswith("/v1/models"):
+        if self.path.startswith("/v1/engines") or self.path.startswith(
+            "/v1/models"
+        ):
             is_legacy = "engines" in self.path
             is_list = self.path in ["/v1/engines", "/v1/models"]
             if is_legacy and not is_list:
@@ -188,7 +199,9 @@ class Handler(BaseHTTPRequestHandler):
                         body, is_legacy=is_legacy
                     )
                 else:
-                    response = OAIcompletions.completions(body, is_legacy=is_legacy)
+                    response = OAIcompletions.completions(
+                        body, is_legacy=is_legacy
+                    )
 
                 self.return_json(response)
 
@@ -203,9 +216,13 @@ class Handler(BaseHTTPRequestHandler):
             instruction = body["instruction"]
             input = body.get("input", "")
             temperature = clamp(
-                default(body, "temperature", req_params["temperature"]), 0.001, 1.999
+                default(body, "temperature", req_params["temperature"]),
+                0.001,
+                1.999,
             )  # fixup absolute 0.0
-            top_p = clamp(default(body, "top_p", req_params["top_p"]), 0.001, 1.0)
+            top_p = clamp(
+                default(body, "top_p", req_params["top_p"]), 0.001, 1.0
+            )
 
             response = OAIedits.edits(instruction, input, temperature, top_p)
 
@@ -219,7 +236,9 @@ class Handler(BaseHTTPRequestHandler):
 
             prompt = body["prompt"]
             size = default(body, "size", "1024x1024")
-            response_format = default(body, "response_format", "url")  # or b64_json
+            response_format = default(
+                body, "response_format", "url"
+            )  # or b64_json
             n = default(body, "n", 1)  # ignore the batch limits of max 10
 
             response = OAIimages.generations(
@@ -282,14 +301,19 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def run_server():
-    server_addr = ("0.0.0.0" if shared.args.listen else "127.0.0.1", params["port"])
+    server_addr = (
+        "0.0.0.0" if shared.args.listen else "127.0.0.1",
+        params["port"],
+    )
     server = ThreadingHTTPServer(server_addr, Handler)
     if shared.args.share:
         try:
             from flask_cloudflared import _run_cloudflared
 
             public_url = _run_cloudflared(params["port"], params["port"] + 1)
-            print(f"OpenAI compatible API ready at: OPENAI_API_BASE={public_url}/v1")
+            print(
+                f"OpenAI compatible API ready at: OPENAI_API_BASE={public_url}/v1"
+            )
         except ImportError:
             print("You should install flask_cloudflared manually")
     else:

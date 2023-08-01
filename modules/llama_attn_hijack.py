@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import math
 import sys
 from typing import Optional, Tuple
@@ -40,7 +41,9 @@ def xformers_forward(
     past_key_value: Optional[Tuple[torch.Tensor]] = None,
     output_attentions: bool = False,
     use_cache: bool = False,
-) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
+) -> Tuple[
+    torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]
+]:
     bsz, q_len, _ = hidden_states.size()
 
     query_states = (
@@ -148,7 +151,9 @@ def sdp_attention_forward(
     past_key_value: Optional[Tuple[torch.Tensor]] = None,
     output_attentions: bool = False,
     use_cache: bool = False,
-) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
+) -> Tuple[
+    torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]
+]:
     bsz, q_len, _ = hidden_states.size()
 
     query_states = (

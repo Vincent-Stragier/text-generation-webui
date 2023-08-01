@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import copy
 
 # Slightly different defaults for OpenAI's API
@@ -53,7 +54,9 @@ def default(dic, key, default):
         # maybe it's just something like 1 instead of 1.0
         try:
             v = type(default)(val)
-            if type(val)(v) == val:  # if it's the same value passed in, it's ok.
+            if (
+                type(val)(v) == val
+            ):  # if it's the same value passed in, it's ok.
                 return v
         except:
             pass

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import re
 from datetime import datetime
@@ -91,11 +92,17 @@ def get_available_prompts():
     prompts = []
     files = set((k.stem for k in Path("prompts").glob("*.txt")))
     prompts += sorted(
-        [k for k in files if re.match("^[0-9]", k)], key=natural_keys, reverse=True
+        [k for k in files if re.match("^[0-9]", k)],
+        key=natural_keys,
+        reverse=True,
     )
-    prompts += sorted([k for k in files if re.match("^[^0-9]", k)], key=natural_keys)
+    prompts += sorted(
+        [k for k in files if re.match("^[^0-9]", k)], key=natural_keys
+    )
     prompts += [
-        "Instruct-" + k for k in get_available_instruction_templates() if k != "None"
+        "Instruct-" + k
+        for k in get_available_instruction_templates()
+        if k != "None"
     ]
     prompts += ["None"]
     return prompts
@@ -118,7 +125,9 @@ def get_available_instruction_templates():
     paths = []
     if os.path.exists(path):
         paths = (
-            x for x in Path(path).iterdir() if x.suffix in (".json", ".yaml", ".yml")
+            x
+            for x in Path(path).iterdir()
+            if x.suffix in (".json", ".yaml", ".yml")
         )
 
     return ["None"] + sorted(set((k.stem for k in paths)), key=natural_keys)
@@ -149,7 +158,8 @@ def get_datasets(path: str, ext: str):
             set(
                 [
                     k.stem
-                    for k in list(Path(path).glob("txt")) + list(Path(path).glob("*/"))
+                    for k in list(Path(path).glob("txt"))
+                    + list(Path(path).glob("*/"))
                     if k.stem != "put-trainer-datasets-here"
                 ]
             ),
@@ -182,7 +192,9 @@ def get_available_chat_styles():
 
 def get_available_sessions():
     items = sorted(
-        set(k.stem for k in Path("logs").glob(f"session_{shared.get_mode()}*")),
+        set(
+            k.stem for k in Path("logs").glob(f"session_{shared.get_mode()}*")
+        ),
         key=natural_keys,
         reverse=True,
     )

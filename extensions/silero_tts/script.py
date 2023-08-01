@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import time
 from pathlib import Path
 
@@ -178,7 +179,9 @@ def load_model():
         + ".pt"
     )
     if Path(model_path).is_file():
-        print(f"\nUsing Silero TTS cached checkpoint found at {torch_cache_path}")
+        print(
+            f"\nUsing Silero TTS cached checkpoint found at {torch_cache_path}"
+        )
         model, example_text = torch.hub.load(
             repo_or_dir=torch_cache_path + "/snakers4_silero-models_master/",
             model="silero_tts",
@@ -249,7 +252,9 @@ def history_modifier(history):
     if len(history["internal"]) > 0:
         history["visible"][-1] = [
             history["visible"][-1][0],
-            history["visible"][-1][1].replace("controls autoplay>", "controls>"),
+            history["visible"][-1][1].replace(
+                "controls autoplay>", "controls>"
+            ),
         ]
 
     return history
@@ -287,9 +292,7 @@ def output_modifier(string, state):
         )
 
         autoplay = "autoplay" if params["autoplay"] else ""
-        string = (
-            f'<audio src="file/{output_file.as_posix()}" controls {autoplay}></audio>'
-        )
+        string = f'<audio src="file/{output_file.as_posix()}" controls {autoplay}></audio>'
         if params["show_text"]:
             string += f"\n\n{original_string}"
 
@@ -306,27 +309,38 @@ def ui():
     # Gradio elements
     with gr.Accordion("Silero TTS"):
         with gr.Row():
-            activate = gr.Checkbox(value=params["activate"], label="Activate TTS")
+            activate = gr.Checkbox(
+                value=params["activate"], label="Activate TTS"
+            )
             autoplay = gr.Checkbox(
                 value=params["autoplay"], label="Play TTS automatically"
             )
 
         show_text = gr.Checkbox(
-            value=params["show_text"], label="Show message text under audio player"
+            value=params["show_text"],
+            label="Show message text under audio player",
         )
         voice = gr.Dropdown(
-            value=params["speaker"], choices=voices_by_gender, label="TTS voice"
+            value=params["speaker"],
+            choices=voices_by_gender,
+            label="TTS voice",
         )
         with gr.Row():
             v_pitch = gr.Dropdown(
-                value=params["voice_pitch"], choices=voice_pitches, label="Voice pitch"
+                value=params["voice_pitch"],
+                choices=voice_pitches,
+                label="Voice pitch",
             )
             v_speed = gr.Dropdown(
-                value=params["voice_speed"], choices=voice_speeds, label="Voice speed"
+                value=params["voice_speed"],
+                choices=voice_speeds,
+                label="Voice speed",
             )
 
         with gr.Row():
-            convert = gr.Button("Permanently replace audios with the message texts")
+            convert = gr.Button(
+                "Permanently replace audios with the message texts"
+            )
             convert_cancel = gr.Button("Cancel", visible=False)
             convert_confirm = gr.Button(
                 "Confirm (cannot be undone)", variant="stop", visible=False
@@ -356,7 +370,9 @@ def ui():
             ],
             None,
             convert_arr,
-        ).then(remove_tts_from_history, gradio("history"), gradio("history")).then(
+        ).then(
+            remove_tts_from_history, gradio("history"), gradio("history")
+        ).then(
             chat.save_persistent_history,
             gradio("history", "character_menu", "mode"),
             None,
@@ -377,7 +393,9 @@ def ui():
         # Toggle message text in history
         show_text.change(
             lambda x: params.update({"show_text": x}), show_text, None
-        ).then(toggle_text_in_history, gradio("history"), gradio("history")).then(
+        ).then(
+            toggle_text_in_history, gradio("history"), gradio("history")
+        ).then(
             chat.save_persistent_history,
             gradio("history", "character_menu", "mode"),
             None,

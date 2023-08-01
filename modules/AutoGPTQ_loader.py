@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from pathlib import Path
 
 from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
@@ -65,7 +66,9 @@ def load_quantized(model_name):
             if hasattr(model.model, "dtype"):
                 model.dtype = model.model.dtype
 
-        if hasattr(model.model, "model") and hasattr(model.model.model, "embed_tokens"):
+        if hasattr(model.model, "model") and hasattr(
+            model.model.model, "embed_tokens"
+        ):
             if not hasattr(model, "embed_tokens"):
                 model.embed_tokens = model.model.model.embed_tokens
 

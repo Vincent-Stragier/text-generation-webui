@@ -1,22 +1,4 @@
-import os
-import warnings
-
-from modules.logging_colors import logger
-from modules.block_requests import OpenMonkeyPatch, RequestBlocker
-
-os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
-os.environ["BITSANDBYTES_NOWELCOME"] = "1"
-warnings.filterwarnings(
-    "ignore", category=UserWarning, message="TypedStorage is deprecated"
-)
-
-with RequestBlocker():
-    import gradio as gr
-
-import matplotlib
-
-matplotlib.use("Agg")  # This fixes LaTeX rendering on some systems
-
+# -*- coding: utf-8 -*-
 import importlib
 import json
 import math
@@ -25,10 +7,12 @@ import re
 import sys
 import time
 import traceback
+import warnings
 from functools import partial
 from pathlib import Path
 from threading import Lock
 
+import matplotlib
 import psutil
 import torch
 import yaml
@@ -36,9 +20,11 @@ from PIL import Image
 
 import modules.extensions as extensions_module
 from modules import chat, loaders, presets, shared, training, ui, utils
+from modules.block_requests import OpenMonkeyPatch, RequestBlocker
 from modules.extensions import apply_extensions
 from modules.github import clone_or_pull_repository
 from modules.html_generator import chat_html_wrapper
+from modules.logging_colors import logger
 from modules.LoRA import add_lora_to_model
 from modules.models import load_model, unload_model
 from modules.models_settings import (
@@ -54,6 +40,18 @@ from modules.text_generation import (
 )
 from modules.utils import gradio
 
+os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
+os.environ["BITSANDBYTES_NOWELCOME"] = "1"
+warnings.filterwarnings(
+    "ignore", category=UserWarning, message="TypedStorage is deprecated"
+)
+
+with RequestBlocker():
+    import gradio as gr
+
+
+matplotlib.use("Agg")  # This fixes LaTeX rendering on some systems
+
 
 def load_model_wrapper(selected_model, loader, autoload=False):
     if not autoload:
@@ -68,7 +66,9 @@ def load_model_wrapper(selected_model, loader, autoload=False):
             shared.model_name = selected_model
             unload_model()
             if selected_model != "":
-                shared.model, shared.tokenizer = load_model(shared.model_name, loader)
+                shared.model, shared.tokenizer = load_model(
+                    shared.model_name, loader
+                )
 
             if shared.model is not None:
                 yield f"Successfully loaded {selected_model}"
@@ -148,15 +148,23 @@ def download_model_wrapper(repo_id, progress=gr.Progress()):
 
         progress(0.0)
         yield ("Cleaning up the model/branch names")
-        model, branch = downloader.sanitize_model_and_branch_names(model, branch)
+        model, branch = downloader.sanitize_model_and_branch_names(
+            model, branch
+        )
 
         yield ("Getting the download links from Hugging Face")
-        links, sha256, is_lora = downloader.get_download_links_from_huggingface(
+        (
+            links,
+            sha256,
+            is_lora,
+        ) = downloader.get_download_links_from_huggingface(
             model, branch, text_only=False
         )
 
         yield ("Getting the output folder")
-        base_folder = shared.args.lora_dir if is_lora else shared.args.model_dir
+        base_folder = (
+            shared.args.lora_dir if is_lora else shared.args.model_dir
+        )
         output_folder = downloader.get_output_folder(
             model, branch, is_lora, base_folder=base_folder
         )
@@ -164,7 +172,9 @@ def download_model_wrapper(repo_id, progress=gr.Progress()):
         if check:
             progress(0.5)
             yield ("Checking previously downloaded files")
-            downloader.check_model_files(model, branch, links, sha256, output_folder)
+            downloader.check_model_files(
+                model, branch, links, sha256, output_folder
+            )
             progress(1.0)
         else:
             yield (f"Downloading files to {output_folder}")
@@ -188,7 +198,10 @@ def create_model_menus():
     total_mem = []
     for i in range(torch.cuda.device_count()):
         total_mem.append(
-            math.floor(torch.cuda.get_device_properties(i).total_memory / (1024 * 1024))
+            math.floor(
+                torch.cuda.get_device_properties(i).total_memory
+                / (1024 * 1024)
+            )
         )
 
     default_gpu_mem = []
@@ -229,8 +242,12 @@ def create_model_menus():
                             visible=not shared.settings["autoload_model"],
                             elem_classes="refresh-button",
                         )
-                        unload = gr.Button("Unload", elem_classes="refresh-button")
-                        reload = gr.Button("Reload", elem_classes="refresh-button")
+                        unload = gr.Button(
+                            "Unload", elem_classes="refresh-button"
+                        )
+                        reload = gr.Button(
+                            "Reload", elem_classes="refresh-button"
+                        )
                         save_settings = gr.Button(
                             "Save settings", elem_classes="refresh-button"
                         )
@@ -407,7 +424,9 @@ def create_model_menus():
                         shared.gradio["triton"] = gr.Checkbox(
                             label="triton", value=shared.args.triton
                         )
-                        shared.gradio["no_inject_fused_attention"] = gr.Checkbox(
+                        shared.gradio[
+                            "no_inject_fused_attention"
+                        ] = gr.Checkbox(
                             label="no_inject_fused_attention",
                             value=shared.args.no_inject_fused_attention,
                             info="Disable fused attention. Fused attention improves inference performance but uses more VRAM. Disable if running low on VRAM.",
@@ -431,22 +450,26 @@ def create_model_menus():
                             label="cpu", value=shared.args.cpu
                         )
                         shared.gradio["load_in_8bit"] = gr.Checkbox(
-                            label="load-in-8bit", value=shared.args.load_in_8bit
+                            label="load-in-8bit",
+                            value=shared.args.load_in_8bit,
                         )
                         shared.gradio["bf16"] = gr.Checkbox(
                             label="bf16", value=shared.args.bf16
                         )
                         shared.gradio["auto_devices"] = gr.Checkbox(
-                            label="auto-devices", value=shared.args.auto_devices
+                            label="auto-devices",
+                            value=shared.args.auto_devices,
                         )
                         shared.gradio["disk"] = gr.Checkbox(
                             label="disk", value=shared.args.disk
                         )
                         shared.gradio["load_in_4bit"] = gr.Checkbox(
-                            label="load-in-4bit", value=shared.args.load_in_4bit
+                            label="load-in-4bit",
+                            value=shared.args.load_in_4bit,
                         )
                         shared.gradio["use_double_quant"] = gr.Checkbox(
-                            label="use_double_quant", value=shared.args.use_double_quant
+                            label="use_double_quant",
+                            value=shared.args.use_double_quant,
                         )
                         shared.gradio["no_mmap"] = gr.Checkbox(
                             label="no-mmap", value=shared.args.no_mmap
@@ -499,7 +522,9 @@ def create_model_menus():
 
             with gr.Row():
                 shared.gradio["model_status"] = gr.Markdown(
-                    "No model is loaded" if shared.model_name == "None" else "Ready"
+                    "No model is loaded"
+                    if shared.model_name == "None"
+                    else "Ready"
                 )
 
     shared.gradio["loader"].change(
@@ -711,10 +736,14 @@ def create_settings_menus(default_preset):
                             value=generate_params["repetition_penalty_range"],
                             label="repetition_penalty_range",
                         )
-                        shared.gradio["encoder_repetition_penalty"] = gr.Slider(
+                        shared.gradio[
+                            "encoder_repetition_penalty"
+                        ] = gr.Slider(
                             0.8,
                             1.5,
-                            value=generate_params["encoder_repetition_penalty"],
+                            value=generate_params[
+                                "encoder_repetition_penalty"
+                            ],
                             step=0.01,
                             label="encoder_repetition_penalty",
                         )
@@ -747,7 +776,8 @@ def create_settings_menus(default_preset):
                             label="top_a",
                         )
                         shared.gradio["do_sample"] = gr.Checkbox(
-                            value=generate_params["do_sample"], label="do_sample"
+                            value=generate_params["do_sample"],
+                            label="do_sample",
                         )
 
             with gr.Accordion("Learn more", open=False):
@@ -874,7 +904,8 @@ def create_settings_menus(default_preset):
                         )
                         shared.gradio["custom_stopping_strings"] = gr.Textbox(
                             lines=1,
-                            value=shared.settings["custom_stopping_strings"] or None,
+                            value=shared.settings["custom_stopping_strings"]
+                            or None,
                             label="Custom stopping strings",
                             info='In addition to the defaults. Written between "" and separated by commas. For instance: "\\nYour Assistant:", "\\nThe assistant:"',
                         )
@@ -942,7 +973,9 @@ def create_file_saving_menus():
             info="For reference. Unchangeable.",
             interactive=False,
         )
-        shared.gradio["save_contents"] = gr.Textbox(lines=10, label="File contents")
+        shared.gradio["save_contents"] = gr.Textbox(
+            lines=10, label="File contents"
+        )
         with gr.Row():
             shared.gradio["save_confirm"] = gr.Button(
                 "Save", elem_classes="small-button"
@@ -955,7 +988,9 @@ def create_file_saving_menus():
     with gr.Box(visible=False, elem_classes="file-saver") as shared.gradio[
         "file_deleter"
     ]:
-        shared.gradio["delete_filename"] = gr.Textbox(lines=1, label="File name")
+        shared.gradio["delete_filename"] = gr.Textbox(
+            lines=1, label="File name"
+        )
         shared.gradio["delete_root"] = gr.Textbox(
             lines=1,
             label="File folder",
@@ -1031,7 +1066,9 @@ def create_file_saving_event_handlers():
                 "save_character_filename",
             ),
             None,
-        ).then(lambda: gr.update(visible=False), None, gradio("character_saver"))
+        ).then(
+            lambda: gr.update(visible=False), None, gradio("character_saver")
+        )
 
         shared.gradio["delete_character_confirm"].click(
             chat.delete_character, gradio("character_menu"), None
@@ -1055,7 +1092,9 @@ def create_file_saving_event_handlers():
         gradio(shared.input_elements),
         gradio("interface_state"),
     ).then(
-        presets.generate_preset_yaml, gradio("interface_state"), gradio("save_contents")
+        presets.generate_preset_yaml,
+        gradio("interface_state"),
+        gradio("save_contents"),
     ).then(
         lambda: "presets/", None, gradio("save_root")
     ).then(
@@ -1146,7 +1185,9 @@ def create_file_saving_event_handlers():
             )
 
         shared.gradio["delete_session"].click(
-            lambda x: f"{x}.json", gradio("session_menu"), gradio("delete_filename")
+            lambda x: f"{x}.json",
+            gradio("session_menu"),
+            gradio("delete_filename"),
         ).then(lambda: "logs/", None, gradio("delete_root")).then(
             lambda: gr.update(visible=True), None, gradio("file_deleter")
         )
@@ -1155,7 +1196,9 @@ def create_file_saving_event_handlers():
 def set_interface_arguments(interface_mode, extensions, bool_active):
     modes = ["default", "notebook", "chat", "cai_chat"]
     cmd_list = vars(shared.args)
-    bool_list = [k for k in cmd_list if type(cmd_list[k]) is bool and k not in modes]
+    bool_list = [
+        k for k in cmd_list if type(cmd_list[k]) is bool and k not in modes
+    ]
 
     shared.args.extensions = extensions
     for k in modes[1:]:
@@ -1184,13 +1227,17 @@ def create_interface():
     if shared.args.gradio_auth:
         gradio_auth_creds += [
             x.strip()
-            for x in shared.args.gradio_auth.strip('"').replace("\n", "").split(",")
+            for x in shared.args.gradio_auth.strip('"')
+            .replace("\n", "")
+            .split(",")
             if x.strip()
         ]
     if shared.args.gradio_auth_path is not None:
         with open(shared.args.gradio_auth_path, "r", encoding="utf8") as file:
             for line in file.readlines():
-                gradio_auth_creds += [x.strip() for x in line.split(",") if x.strip()]
+                gradio_auth_creds += [
+                    x.strip() for x in line.split(",") if x.strip()
+                ]
     if gradio_auth_creds:
         auth = [tuple(cred.split(":")) for cred in gradio_auth_creds]
 
@@ -1209,8 +1256,11 @@ def create_interface():
         shared.persistent_interface_state.update(
             {
                 "mode": shared.settings["mode"],
-                "character_menu": shared.args.character or shared.settings["character"],
-                "instruction_template": shared.settings["instruction_template"],
+                "character_menu": shared.args.character
+                or shared.settings["character"],
+                "instruction_template": shared.settings[
+                    "instruction_template"
+                ],
             }
         )
 
@@ -1281,14 +1331,18 @@ def create_interface():
                     shared.gradio["Remove last"] = gr.Button("Remove last")
 
                 with gr.Row():
-                    shared.gradio["Copy last reply"] = gr.Button("Copy last reply")
+                    shared.gradio["Copy last reply"] = gr.Button(
+                        "Copy last reply"
+                    )
                     shared.gradio["Replace last reply"] = gr.Button(
                         "Replace last reply"
                     )
                     shared.gradio["Send dummy message"] = gr.Button(
                         "Send dummy message"
                     )
-                    shared.gradio["Send dummy reply"] = gr.Button("Send dummy reply")
+                    shared.gradio["Send dummy reply"] = gr.Button(
+                        "Send dummy reply"
+                    )
 
                 with gr.Row():
                     shared.gradio["Clear history"] = gr.Button("Clear history")
@@ -1387,7 +1441,9 @@ def create_interface():
                 with gr.Tab("Instruction template"):
                     with gr.Row():
                         with gr.Row():
-                            shared.gradio["instruction_template"] = gr.Dropdown(
+                            shared.gradio[
+                                "instruction_template"
+                            ] = gr.Dropdown(
                                 choices=utils.get_available_instruction_templates(),
                                 label="Instruction template",
                                 value="None",
@@ -1435,7 +1491,9 @@ def create_interface():
                 with gr.Tab("Chat history"):
                     with gr.Row():
                         with gr.Column():
-                            shared.gradio["download"] = gr.File(label="Download")
+                            shared.gradio["download"] = gr.File(
+                                label="Download"
+                            )
                             shared.gradio["download_button"] = gr.Button(
                                 value="Refresh"
                             )
@@ -1451,7 +1509,9 @@ def create_interface():
                     with gr.Tab("JSON"):
                         with gr.Row():
                             shared.gradio["upload_json"] = gr.File(
-                                type="binary", file_types=[".json"], label="JSON File"
+                                type="binary",
+                                file_types=[".json"],
+                                label="JSON File",
                             )
                             shared.gradio["upload_img_bot"] = gr.Image(
                                 type="pil", label="Profile Picture (optional)"
@@ -1472,7 +1532,10 @@ def create_interface():
                                 shared.gradio["tavern_json"] = gr.State()
                             with gr.Column():
                                 shared.gradio["tavern_name"] = gr.Textbox(
-                                    value="", lines=1, label="Name", interactive=False
+                                    value="",
+                                    lines=1,
+                                    label="Name",
+                                    interactive=False,
                                 )
                                 shared.gradio["tavern_desc"] = gr.Textbox(
                                     value="",
@@ -1501,11 +1564,15 @@ def create_interface():
                     with gr.Column(scale=4):
                         with gr.Tab("Raw"):
                             shared.gradio["textbox"] = gr.Textbox(
-                                value=default_text, elem_classes="textbox", lines=27
+                                value=default_text,
+                                elem_classes="textbox",
+                                lines=27,
                             )
 
                         with gr.Tab("Markdown"):
-                            shared.gradio["markdown_render"] = gr.Button("Render")
+                            shared.gradio["markdown_render"] = gr.Button(
+                                "Render"
+                            )
                             shared.gradio["markdown"] = gr.Markdown()
 
                         with gr.Tab("HTML"):
@@ -1546,19 +1613,29 @@ def create_interface():
                             ui.create_refresh_button(
                                 shared.gradio["prompt_menu"],
                                 lambda: None,
-                                lambda: {"choices": utils.get_available_prompts()},
+                                lambda: {
+                                    "choices": utils.get_available_prompts()
+                                },
                                 ["refresh-button", "refresh-button-small"],
                             )
                             shared.gradio["save_prompt"] = gr.Button(
                                 "💾",
-                                elem_classes=["refresh-button", "refresh-button-small"],
+                                elem_classes=[
+                                    "refresh-button",
+                                    "refresh-button-small",
+                                ],
                             )
                             shared.gradio["delete_prompt"] = gr.Button(
                                 "🗑️",
-                                elem_classes=["refresh-button", "refresh-button-small"],
+                                elem_classes=[
+                                    "refresh-button",
+                                    "refresh-button-small",
+                                ],
                             )
 
-                        shared.gradio["count_tokens"] = gr.Button("Count tokens")
+                        shared.gradio["count_tokens"] = gr.Button(
+                            "Count tokens"
+                        )
                         shared.gradio["status"] = gr.Markdown("")
 
             with gr.Tab("Parameters", elem_id="parameters"):
@@ -1593,7 +1670,9 @@ def create_interface():
                             )
                             shared.gradio["Stop"] = gr.Button("Stop")
                             shared.gradio["Continue"] = gr.Button("Continue")
-                            shared.gradio["count_tokens"] = gr.Button("Count tokens")
+                            shared.gradio["count_tokens"] = gr.Button(
+                                "Count tokens"
+                            )
 
                         with gr.Row():
                             shared.gradio["prompt_menu"] = gr.Dropdown(
@@ -1605,7 +1684,9 @@ def create_interface():
                             ui.create_refresh_button(
                                 shared.gradio["prompt_menu"],
                                 lambda: None,
-                                lambda: {"choices": utils.get_available_prompts()},
+                                lambda: {
+                                    "choices": utils.get_available_prompts()
+                                },
                                 "refresh-button",
                             )
                             shared.gradio["save_prompt"] = gr.Button(
@@ -1626,7 +1707,9 @@ def create_interface():
                             )
 
                         with gr.Tab("Markdown"):
-                            shared.gradio["markdown_render"] = gr.Button("Render")
+                            shared.gradio["markdown_render"] = gr.Button(
+                                "Render"
+                            )
                             shared.gradio["markdown"] = gr.Markdown()
 
                         with gr.Tab("HTML"):
@@ -1683,7 +1766,9 @@ def create_interface():
 
                     with gr.Row():
                         with gr.Column():
-                            shared.gradio["extensions_menu"] = gr.CheckboxGroup(
+                            shared.gradio[
+                                "extensions_menu"
+                            ] = gr.CheckboxGroup(
                                 choices=utils.get_available_extensions(),
                                 value=shared.args.extensions,
                                 label="Available extensions",
@@ -1712,7 +1797,9 @@ def create_interface():
                             ui.create_refresh_button(
                                 shared.gradio["session_menu"],
                                 lambda: None,
-                                lambda: {"choices": utils.get_available_sessions()},
+                                lambda: {
+                                    "choices": utils.get_available_sessions()
+                                },
                                 ["refresh-button"],
                             )
                             shared.gradio["save_session"] = gr.Button(
@@ -1764,9 +1851,13 @@ def create_interface():
 
         # chat mode event handlers
         if shared.is_chat():
-            shared.input_params = gradio("Chat input", "start_with", "interface_state")
+            shared.input_params = gradio(
+                "Chat input", "start_with", "interface_state"
+            )
             clear_arr = gradio(
-                "Clear history-confirm", "Clear history", "Clear history-cancel"
+                "Clear history-confirm",
+                "Clear history",
+                "Clear history-cancel",
             )
             shared.reload_inputs = gradio(
                 "history", "name1", "name2", "mode", "chat_style"
@@ -1802,7 +1893,10 @@ def create_interface():
                     None,
                 )
                 .then(
-                    lambda: None, None, None, _js=f"() => {{{audio_notification_js}}}"
+                    lambda: None,
+                    None,
+                    None,
+                    _js=f"() => {{{audio_notification_js}}}",
                 )
             )
 
@@ -1836,7 +1930,10 @@ def create_interface():
                     None,
                 )
                 .then(
-                    lambda: None, None, None, _js=f"() => {{{audio_notification_js}}}"
+                    lambda: None,
+                    None,
+                    None,
+                    _js=f"() => {{{audio_notification_js}}}",
                 )
             )
 
@@ -1864,7 +1961,10 @@ def create_interface():
                     None,
                 )
                 .then(
-                    lambda: None, None, None, _js=f"() => {{{audio_notification_js}}}"
+                    lambda: None,
+                    None,
+                    None,
+                    _js=f"() => {{{audio_notification_js}}}",
                 )
             )
 
@@ -1892,7 +1992,10 @@ def create_interface():
                     None,
                 )
                 .then(
-                    lambda: None, None, None, _js=f"() => {{{audio_notification_js}}}"
+                    lambda: None,
+                    None,
+                    None,
+                    _js=f"() => {{{audio_notification_js}}}",
                 )
             )
 
@@ -1921,7 +2024,10 @@ def create_interface():
                     gradio("interface_state"),
                 )
                 .then(
-                    lambda: None, None, None, _js=f"() => {{{audio_notification_js}}}"
+                    lambda: None,
+                    None,
+                    None,
+                    _js=f"() => {{{audio_notification_js}}}",
                 )
             )
 
@@ -2010,7 +2116,9 @@ def create_interface():
                 None,
                 clear_arr,
             ).then(
-                chat.clear_chat_log, gradio("interface_state"), gradio("history")
+                chat.clear_chat_log,
+                gradio("interface_state"),
+                gradio("history"),
             ).then(
                 chat.redraw_html, shared.reload_inputs, gradio("display")
             ).then(
@@ -2079,7 +2187,9 @@ def create_interface():
             )
             shared.gradio["instruction_template"].change(
                 partial(chat.load_character, instruct=True),
-                gradio("instruction_template", "name1_instruct", "name2_instruct"),
+                gradio(
+                    "instruction_template", "name1_instruct", "name2_instruct"
+                ),
                 gradio(
                     "name1_instruct",
                     "name2_instruct",
@@ -2106,16 +2216,24 @@ def create_interface():
             # Save/delete a character
             shared.gradio["save_character"].click(
                 lambda x: x, gradio("name2"), gradio("save_character_filename")
-            ).then(lambda: gr.update(visible=True), None, gradio("character_saver"))
+            ).then(
+                lambda: gr.update(visible=True),
+                None,
+                gradio("character_saver"),
+            )
 
             shared.gradio["delete_character"].click(
-                lambda: gr.update(visible=True), None, gradio("character_deleter")
+                lambda: gr.update(visible=True),
+                None,
+                gradio("character_deleter"),
             )
 
             shared.gradio["save_template"].click(
                 lambda: "My Template.yaml", None, gradio("save_filename")
             ).then(
-                lambda: "characters/instruction-following/", None, gradio("save_root")
+                lambda: "characters/instruction-following/",
+                None,
+                gradio("save_root"),
             ).then(
                 chat.generate_instruction_template_yaml,
                 gradio(
@@ -2134,7 +2252,9 @@ def create_interface():
                 gradio("instruction_template"),
                 gradio("delete_filename"),
             ).then(
-                lambda: "characters/instruction-following/", None, gradio("delete_root")
+                lambda: "characters/instruction-following/",
+                None,
+                gradio("delete_root"),
             ).then(
                 lambda: gr.update(visible=True), None, gradio("file_deleter")
             )
@@ -2150,10 +2270,14 @@ def create_interface():
                 gradio("character_menu"),
             )
             shared.gradio["upload_json"].upload(
-                lambda: gr.update(interactive=True), None, gradio("Submit character")
+                lambda: gr.update(interactive=True),
+                None,
+                gradio("Submit character"),
             )
             shared.gradio["upload_json"].clear(
-                lambda: gr.update(interactive=False), None, gradio("Submit character")
+                lambda: gr.update(interactive=False),
+                None,
+                gradio("Submit character"),
             )
 
             shared.gradio["Submit tavern character"].click(
@@ -2219,7 +2343,10 @@ def create_interface():
                     gradio("interface_state"),
                 )
                 .then(
-                    lambda: None, None, None, _js=f"() => {{{audio_notification_js}}}"
+                    lambda: None,
+                    None,
+                    None,
+                    _js=f"() => {{{audio_notification_js}}}",
                 )
                 # lambda: None, None, None, _js="() => {element = document.getElementsByTagName('textarea')[0]; element.scrollTop = element.scrollHeight}")
             )
@@ -2244,7 +2371,10 @@ def create_interface():
                     gradio("interface_state"),
                 )
                 .then(
-                    lambda: None, None, None, _js=f"() => {{{audio_notification_js}}}"
+                    lambda: None,
+                    None,
+                    None,
+                    _js=f"() => {{{audio_notification_js}}}",
                 )
                 # lambda: None, None, None, _js="() => {element = document.getElementsByTagName('textarea')[0]; element.scrollTop = element.scrollHeight}")
             )
@@ -2257,7 +2387,10 @@ def create_interface():
                     show_progress=False,
                 )
                 shared.gradio["markdown_render"].click(
-                    lambda x: x, gradio("textbox"), gradio("markdown"), queue=False
+                    lambda x: x,
+                    gradio("textbox"),
+                    gradio("markdown"),
+                    queue=False,
                 )
                 gen_events.append(
                     shared.gradio["Regenerate"]
@@ -2307,7 +2440,8 @@ def create_interface():
                     )
                     .then(
                         generate_reply_wrapper,
-                        [shared.gradio["output_textbox"]] + shared.input_params[1:],
+                        [shared.gradio["output_textbox"]]
+                        + shared.input_params[1:],
                         output_params,
                         show_progress=False,
                     )
@@ -2341,7 +2475,9 @@ def create_interface():
             shared.gradio["save_prompt"].click(
                 lambda x: x, gradio("textbox"), gradio("save_contents")
             ).then(lambda: "prompts/", None, gradio("save_root")).then(
-                lambda: utils.current_time() + ".txt", None, gradio("save_filename")
+                lambda: utils.current_time() + ".txt",
+                None,
+                gradio("save_filename"),
             ).then(
                 lambda: gr.update(visible=True), None, gradio("file_saver")
             )
@@ -2349,13 +2485,18 @@ def create_interface():
             shared.gradio["delete_prompt"].click(
                 lambda: "prompts/", None, gradio("delete_root")
             ).then(
-                lambda x: x + ".txt", gradio("prompt_menu"), gradio("delete_filename")
+                lambda x: x + ".txt",
+                gradio("prompt_menu"),
+                gradio("delete_filename"),
             ).then(
                 lambda: gr.update(visible=True), None, gradio("file_deleter")
             )
 
             shared.gradio["count_tokens"].click(
-                count_tokens, gradio("textbox"), gradio("status"), show_progress=False
+                count_tokens,
+                gradio("textbox"),
+                gradio("status"),
+                show_progress=False,
             )
 
         create_file_saving_event_handlers()
@@ -2368,7 +2509,9 @@ def create_interface():
                 _js="() => document.getElementsByTagName('body')[0].classList.add('dark')",
             )
 
-        shared.gradio["interface"].load(lambda: None, None, None, _js=f"() => {{{js}}}")
+        shared.gradio["interface"].load(
+            lambda: None, None, None, _js=f"() => {{{js}}}"
+        )
         shared.gradio["interface"].load(
             partial(ui.apply_interface_values, {}, use_persistent=True),
             None,
@@ -2411,7 +2554,10 @@ def create_interface():
 if __name__ == "__main__":
     # Loading custom settings
     settings_file = None
-    if shared.args.settings is not None and Path(shared.args.settings).exists():
+    if (
+        shared.args.settings is not None
+        and Path(shared.args.settings).exists()
+    ):
         settings_file = Path(shared.args.settings)
     elif Path("settings.yaml").exists():
         settings_file = Path("settings.yaml")
@@ -2467,14 +2613,18 @@ if __name__ == "__main__":
     # Select the model from a command-line menu
     elif shared.args.model_menu:
         if len(available_models) == 0:
-            logger.error("No models are available! Please download at least one.")
+            logger.error(
+                "No models are available! Please download at least one."
+            )
             sys.exit(0)
         else:
             print("The following models are available:\n")
             for i, model in enumerate(available_models):
                 print(f"{i+1}. {model}")
 
-            print(f"\nWhich one do you want to load? 1-{len(available_models)}\n")
+            print(
+                f"\nWhich one do you want to load? 1-{len(available_models)}\n"
+            )
             i = int(input()) - 1
             print()
 
@@ -2483,7 +2633,9 @@ if __name__ == "__main__":
     # If any model has been selected, load it
     if shared.model_name != "None":
         model_settings = get_model_settings_from_yamls(shared.model_name)
-        shared.settings.update(model_settings)  # hijacking the interface defaults
+        shared.settings.update(
+            model_settings
+        )  # hijacking the interface defaults
         update_model_parameters(
             model_settings, initial=True
         )  # hijacking the command-line arguments

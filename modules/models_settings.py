@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 from pathlib import Path
 
@@ -58,7 +59,8 @@ def update_model_parameters(state, initial=False):
 
         if (
             initial
-            and vars(shared.args)[element] != vars(shared.args_defaults)[element]
+            and vars(shared.args)[element]
+            != vars(shared.args_defaults)[element]
         ):
             continue
 
@@ -87,7 +89,8 @@ def update_model_parameters(state, initial=False):
 
     if not (
         initial
-        and vars(shared.args)["gpu_memory"] != vars(shared.args_defaults)["gpu_memory"]
+        and vars(shared.args)["gpu_memory"]
+        != vars(shared.args_defaults)["gpu_memory"]
     ):
         if found_positive:
             shared.args.gpu_memory = [f"{i}MiB" for i in gpu_memories]

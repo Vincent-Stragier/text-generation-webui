@@ -1,18 +1,18 @@
+# -*- coding: utf-8 -*-
 import time
-import yaml
+from math import exp, log
+
 import tiktoken
 import torch
 import torch.nn.functional as F
-from math import log, exp
-
+import yaml
 from transformers import LogitsProcessor, LogitsProcessorList
 
-from modules import shared
-from modules.text_generation import encode, decode, generate_reply
-
-from extensions.openai.defaults import get_default_req_params, default, clamp
-from extensions.openai.utils import end_line, debug_msg
+from extensions.openai.defaults import clamp, default, get_default_req_params
 from extensions.openai.errors import *
+from extensions.openai.utils import debug_msg, end_line
+from modules import shared
+from modules.text_generation import decode, encode, generate_reply
 
 
 # Thanks to @Cypherfox [Cypherfoxy] for the logits code, blame to @matatonic
@@ -35,7 +35,9 @@ class LogitsBiasProcessor(LogitsProcessor):
             logits[0, self.keys] += self.values
             debug_msg(" --> ", logits[0, self.keys])
             debug_msg(
-                " max/min ", float(torch.max(logits[0])), float(torch.min(logits[0]))
+                " max/min ",
+                float(torch.max(logits[0])),
+                float(torch.min(logits[0])),
             )
         return logits
 
@@ -91,7 +93,9 @@ def marshal_common_params(body):
         "add_bos_token", req_params["add_bos_token"]
     )
     req_params["seed"] = shared.settings.get("seed", req_params["seed"])
-    req_params["custom_stopping_strings"] = shared.settings["custom_stopping_strings"]
+    req_params["custom_stopping_strings"] = shared.settings[
+        "custom_stopping_strings"
+    ]
 
     # OpenAI API Parameters
     # model - ignored for now, TODO: When we can reliably load a model or lora from a name only change this
@@ -101,14 +105,20 @@ def marshal_common_params(body):
     req_params["temperature"] = clamp(
         default(body, "temperature", req_params["temperature"]), 0.01, 1.99
     )  # fixup absolute 0.0/2.0
-    req_params["top_p"] = clamp(default(body, "top_p", req_params["top_p"]), 0.01, 1.0)
+    req_params["top_p"] = clamp(
+        default(body, "top_p", req_params["top_p"]), 0.01, 1.0
+    )
     n = default(body, "n", 1)
     if n != 1:
-        raise InvalidRequestError(message="Only n = 1 is supported.", param="n")
+        raise InvalidRequestError(
+            message="Only n = 1 is supported.", param="n"
+        )
 
     if "stop" in body:  # str or array, max len 4 (ignored)
         if isinstance(body["stop"], str):
-            req_params["stopping_strings"] = [body["stop"]]  # non-standard parameter
+            req_params["stopping_strings"] = [
+                body["stop"]
+            ]  # non-standard parameter
         elif isinstance(body["stop"], list):
             req_params["stopping_strings"] = body["stop"]
 
@@ -120,7 +130,9 @@ def marshal_common_params(body):
         body, "repetition_penalty", req_params["repetition_penalty"]
     )
     req_params["encoder_repetition_penalty"] = default(
-        body, "encoder_repetition_penalty", req_params["encoder_repetition_penalty"]
+        body,
+        "encoder_repetition_penalty",
+        req_params["encoder_repetition_penalty"],
     )
 
     # user - ignored
@@ -131,12 +143,14 @@ def marshal_common_params(body):
         # XXX convert tokens from tiktoken based on requested model
         # Ex.: 'logit_bias': {'1129': 100, '11442': 100, '16243': 100}
         try:
-            encoder = tiktoken.encoding_for_model(req_params["requested_model"])
+            encoder = tiktoken.encoding_for_model(
+                req_params["requested_model"]
+            )
             new_logit_bias = {}
             for logit, bias in logit_bias.items():
-                for x in encode(encoder.decode([int(logit)]), add_special_tokens=False)[
-                    0
-                ]:
+                for x in encode(
+                    encoder.decode([int(logit)]), add_special_tokens=False
+                )[0]:
                     if int(x) in [0, 1, 2, 29871]:  # XXX LLAMA tokens
                         continue
                     new_logit_bias[str(int(x))] = bias
@@ -149,7 +163,9 @@ def marshal_common_params(body):
 
     logprobs = None  # coming to chat eventually
     if "logprobs" in body:
-        logprobs = default(body, "logprobs", 0)  # maybe cap at topk? don't clamp 0-5.
+        logprobs = default(
+            body, "logprobs", 0
+        )  # maybe cap at topk? don't clamp 0-5.
         req_params["logprob_proc"] = LogprobProcessor(logprobs)
         logits_processor.extend([req_params["logprob_proc"]])
     else:
@@ -167,13 +183,17 @@ def messages_to_prompt(body: dict, req_params: dict, max_tokens):
         raise InvalidRequestError(
             message="functions is not supported.", param="functions"
         )
-    if body.get("function_call", ""):  # chat only, 'none', 'auto', {'name': 'func'}
+    if body.get(
+        "function_call", ""
+    ):  # chat only, 'none', 'auto', {'name': 'func'}
         raise InvalidRequestError(
             message="function_call is not supported.", param="function_call"
         )
 
     if not "messages" in body:
-        raise InvalidRequestError(message="messages is required", param="messages")
+        raise InvalidRequestError(
+            message="messages is required", param="messages"
+        )
 
     messages = body["messages"]
 
@@ -200,7 +220,9 @@ def messages_to_prompt(body: dict, req_params: dict, max_tokens):
 
             template = instruct["turn_template"]
             system_message_template = "{message}"
-            system_message_default = instruct.get("context", "")  # can be missing
+            system_message_default = instruct.get(
+                "context", ""
+            )  # can be missing
             bot_start = template.find(
                 "<|bot|>"
             )  # So far, 100% of instruction templates have this token
@@ -228,7 +250,9 @@ def messages_to_prompt(body: dict, req_params: dict, max_tokens):
 
             if "Alpaca" in shared.settings["instruction_template"]:
                 req_params["stopping_strings"].extend(["\n###"])
-            elif instruct["user"]:  # WizardLM and some others have no user prompt.
+            elif instruct[
+                "user"
+            ]:  # WizardLM and some others have no user prompt.
                 req_params["stopping_strings"].extend(
                     ["\n" + instruct["user"], instruct["user"]]
                 )
@@ -245,13 +269,17 @@ def messages_to_prompt(body: dict, req_params: dict, max_tokens):
             print(
                 f"Exception: When loading characters/instruction-following/{shared.settings['instruction_template']}.yaml: {repr(e)}"
             )
-            print("Warning: Loaded default instruction-following template for model.")
+            print(
+                "Warning: Loaded default instruction-following template for model."
+            )
 
     else:
         req_params["stopping_strings"].extend(
             ["\nUser:", "User:"]
         )  # XXX User: prompt here also
-        print("Warning: Loaded default instruction-following template for model.")
+        print(
+            "Warning: Loaded default instruction-following template for model."
+        )
 
     system_msgs = []
     chat_msgs = []
@@ -298,7 +326,9 @@ def messages_to_prompt(body: dict, req_params: dict, max_tokens):
     system_msg = "\n".join(system_msgs)
     system_msg = end_line(system_msg)
 
-    prompt = system_msg + context_msg + "".join(chat_msgs) + role_formats["prompt"]
+    prompt = (
+        system_msg + context_msg + "".join(chat_msgs) + role_formats["prompt"]
+    )
 
     token_count = len(encode(prompt)[0])
 
@@ -306,7 +336,10 @@ def messages_to_prompt(body: dict, req_params: dict, max_tokens):
         err_msg = f"This model maximum context length is {req_params['truncation_length']} tokens. However, your messages resulted in over {token_count} tokens."
         raise InvalidRequestError(message=err_msg, param="messages")
 
-    if max_tokens > 0 and token_count + max_tokens > req_params["truncation_length"]:
+    if (
+        max_tokens > 0
+        and token_count + max_tokens > req_params["truncation_length"]
+    ):
         err_msg = f"This model maximum context length is {req_params['truncation_length']} tokens. However, your messages resulted in over {token_count} tokens and max_tokens is {max_tokens}."
         print(f"Warning: ${err_msg}")
         # raise InvalidRequestError(message=err_msg, params='max_tokens')
@@ -334,7 +367,9 @@ def chat_completions(body: dict, is_legacy: bool = False) -> dict:
     max_tokens = 0
     max_tokens_str = "length" if is_legacy else "max_tokens"
     if max_tokens_str in body:
-        max_tokens = default(body, max_tokens_str, req_params["truncation_length"])
+        max_tokens = default(
+            body, max_tokens_str, req_params["truncation_length"]
+        )
         req_params["max_new_tokens"] = max_tokens
     else:
         req_params["max_new_tokens"] = req_params["truncation_length"]
@@ -343,8 +378,13 @@ def chat_completions(body: dict, is_legacy: bool = False) -> dict:
     prompt, token_count = messages_to_prompt(body, req_params, max_tokens)
 
     # set real max, avoid deeper errors
-    if req_params["max_new_tokens"] + token_count >= req_params["truncation_length"]:
-        req_params["max_new_tokens"] = req_params["truncation_length"] - token_count
+    if (
+        req_params["max_new_tokens"] + token_count
+        >= req_params["truncation_length"]
+    ):
+        req_params["max_new_tokens"] = (
+            req_params["truncation_length"] - token_count
+        )
 
     # generate reply #######################################
     debug_msg({"prompt": prompt, "req_params": req_params})
@@ -420,7 +460,9 @@ def stream_chat_completions(body: dict, is_legacy: bool = False):
     max_tokens = 0
     max_tokens_str = "length" if is_legacy else "max_tokens"
     if max_tokens_str in body:
-        max_tokens = default(body, max_tokens_str, req_params["truncation_length"])
+        max_tokens = default(
+            body, max_tokens_str, req_params["truncation_length"]
+        )
         req_params["max_new_tokens"] = max_tokens
     else:
         req_params["max_new_tokens"] = req_params["truncation_length"]
@@ -429,8 +471,13 @@ def stream_chat_completions(body: dict, is_legacy: bool = False):
     prompt, token_count = messages_to_prompt(body, req_params, max_tokens)
 
     # set real max, avoid deeper errors
-    if req_params["max_new_tokens"] + token_count >= req_params["truncation_length"]:
-        req_params["max_new_tokens"] = req_params["truncation_length"] - token_count
+    if (
+        req_params["max_new_tokens"] + token_count
+        >= req_params["truncation_length"]
+    ):
+        req_params["max_new_tokens"] = (
+            req_params["truncation_length"] - token_count
+        )
 
     def chat_streaming_chunk(content):
         # begin streaming
@@ -541,7 +588,8 @@ def completions(body: dict, is_legacy: bool = False):
                 prompt = decode(prompt)[0]
         else:
             raise InvalidRequestError(
-                message="API Batched generation not yet supported.", param=prompt_str
+                message="API Batched generation not yet supported.",
+                param=prompt_str,
             )
 
     # common params
@@ -642,7 +690,8 @@ def stream_completions(body: dict, is_legacy: bool = False):
                 prompt = decode(prompt)[0]
         else:
             raise InvalidRequestError(
-                message="API Batched generation not yet supported.", param=prompt_str
+                message="API Batched generation not yet supported.",
+                param=prompt_str,
             )
 
     # common params

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import argparse
 from collections import OrderedDict
 from pathlib import Path
@@ -78,7 +79,9 @@ def str2bool(v):
 
 
 parser = argparse.ArgumentParser(
-    formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=54)
+    formatter_class=lambda prog: argparse.HelpFormatter(
+        prog, max_help_position=54
+    )
 )
 
 # Basic settings
@@ -102,7 +105,9 @@ parser.add_argument(
     type=str,
     help="The name of the character to load in chat mode by default.",
 )
-parser.add_argument("--model", type=str, help="Name of the model to load by default.")
+parser.add_argument(
+    "--model", type=str, help="Name of the model to load by default."
+)
 parser.add_argument(
     "--lora",
     type=str,
@@ -207,7 +212,9 @@ parser.add_argument(
     help="Use xformer's memory efficient attention. This should increase your tokens/s.",
 )
 parser.add_argument(
-    "--sdp-attention", action="store_true", help="Use torch 2.0's sdp attention."
+    "--sdp-attention",
+    action="store_true",
+    help="Use torch 2.0's sdp attention.",
 )
 parser.add_argument(
     "--trust-remote-code",
@@ -234,11 +241,15 @@ parser.add_argument(
     help="quant_type for 4-bit. Valid options: nf4, fp4.",
 )
 parser.add_argument(
-    "--use_double_quant", action="store_true", help="use_double_quant for 4-bit."
+    "--use_double_quant",
+    action="store_true",
+    help="use_double_quant for 4-bit.",
 )
 
 # llama.cpp
-parser.add_argument("--threads", type=int, default=0, help="Number of threads to use.")
+parser.add_argument(
+    "--threads", type=int, default=0, help="Number of threads to use."
+)
 parser.add_argument(
     "--n_batch",
     type=int,
@@ -250,7 +261,9 @@ parser.add_argument(
 )
 parser.add_argument("--low-vram", action="store_true", help="Low VRAM Mode")
 parser.add_argument(
-    "--mlock", action="store_true", help="Force the system to keep the model in RAM."
+    "--mlock",
+    action="store_true",
+    help="Force the system to keep the model in RAM.",
 )
 parser.add_argument(
     "--cache-capacity",
@@ -279,7 +292,10 @@ parser.add_argument(
     help="grouped-query attention. Must be 8 for llama2 70b.",
 )
 parser.add_argument(
-    "--rms_norm_eps", type=float, default=0, help="Must be 1e-5 for llama2 70b."
+    "--rms_norm_eps",
+    type=float,
+    default=0,
+    help="Must be 1e-5 for llama2 70b.",
 )
 
 # GPTQ
@@ -312,10 +328,14 @@ parser.add_argument(
     help="Apply the monkey patch for using LoRAs with quantized models.",
 )
 parser.add_argument(
-    "--quant_attn", action="store_true", help="(triton) Enable quant attention."
+    "--quant_attn",
+    action="store_true",
+    help="(triton) Enable quant attention.",
 )
 parser.add_argument(
-    "--warmup_autotune", action="store_true", help="(triton) Enable warmup autotune."
+    "--warmup_autotune",
+    action="store_true",
+    help="(triton) Enable warmup autotune.",
 )
 parser.add_argument(
     "--fused_mlp", action="store_true", help="(triton) Enable fused mlp."
@@ -411,7 +431,9 @@ parser.add_argument(
     "--listen-host", type=str, help="The hostname that the server will use."
 )
 parser.add_argument(
-    "--listen-port", type=int, help="The listening port that the server will use."
+    "--listen-port",
+    type=int,
+    help="The listening port that the server will use.",
 )
 parser.add_argument(
     "--share",
@@ -438,7 +460,9 @@ parser.add_argument(
 )
 
 # API
-parser.add_argument("--api", action="store_true", help="Enable the API extension.")
+parser.add_argument(
+    "--api", action="store_true", help="Enable the API extension."
+)
 parser.add_argument(
     "--api-blocking-port",
     type=int,
@@ -505,7 +529,13 @@ def fix_loader_name(name):
         "llama.cpp-hf",
     ]:
         return "llamacpp_HF"
-    elif name in ["transformers", "huggingface", "hf", "hugging_face", "hugging face"]:
+    elif name in [
+        "transformers",
+        "huggingface",
+        "hf",
+        "hugging_face",
+        "hugging face",
+    ]:
         return "Transformers"
     elif name in ["autogptq", "auto-gptq", "auto_gptq", "auto gptq"]:
         return "AutoGPTQ"

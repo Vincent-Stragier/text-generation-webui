@@ -1,13 +1,13 @@
+# -*- coding: utf-8 -*-
+from extensions.openai.embeddings import get_embeddings_model_name
+from extensions.openai.errors import *
 from modules import shared
-from modules.utils import get_available_models
 from modules.models import load_model, unload_model
 from modules.models_settings import (
     get_model_settings_from_yamls,
     update_model_parameters,
 )
-
-from extensions.openai.embeddings import get_embeddings_model_name
-from extensions.openai.errors import *
+from modules.utils import get_available_models
 
 
 def get_current_model_list() -> list:
@@ -89,4 +89,9 @@ def list_models(is_legacy: bool = False) -> dict:
 
 
 def model_info(model_name: str) -> dict:
-    return {"id": model_name, "object": "model", "owned_by": "user", "permission": []}
+    return {
+        "id": model_name,
+        "object": "model",
+        "owned_by": "user",
+        "permission": [],
+    }

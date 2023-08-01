@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import base64
 import re
 import time
@@ -85,14 +86,21 @@ def tokenizer_modifier(state, prompt, input_ids, input_embeds):
     if image_match is None:
         return prompt, input_ids, input_embeds
 
-    prompt, input_ids, input_embeds, total_embedded = multimodal_embedder.forward(
-        prompt, state, params
+    (
+        prompt,
+        input_ids,
+        input_embeds,
+        total_embedded,
+    ) = multimodal_embedder.forward(prompt, state, params)
+    logger.info(
+        f"Embedded {total_embedded} image(s) in {time.time()-start_ts:.2f}s"
     )
-    logger.info(f"Embedded {total_embedded} image(s) in {time.time()-start_ts:.2f}s")
     return (
         prompt,
         input_ids.unsqueeze(0).to(shared.model.device, dtype=torch.int64),
-        input_embeds.unsqueeze(0).to(shared.model.device, dtype=shared.model.dtype),
+        input_embeds.unsqueeze(0).to(
+            shared.model.device, dtype=shared.model.dtype
+        ),
     )
 
 
@@ -114,7 +122,9 @@ def ui():
         None,
     )
     picture_select.clear(
-        lambda: input_hijack.update({"state": False, "value": ["", ""]}), None, None
+        lambda: input_hijack.update({"state": False, "value": ["", ""]}),
+        None,
+        None,
     )
     single_image_checkbox.change(
         lambda x: params.update({"add_all_images_to_prompt": x}),

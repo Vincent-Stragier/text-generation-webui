@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
 import os
-from sentence_transformers import SentenceTransformer
+
 import numpy as np
-from extensions.openai.utils import float_list_to_base64, debug_msg
+from sentence_transformers import SentenceTransformer
+
 from extensions.openai.errors import *
+from extensions.openai.utils import debug_msg, float_list_to_base64
 
 st_model = (
     os.environ["OPENEDAI_EMBEDDING_MODEL"]
@@ -29,7 +32,8 @@ def load_embedding_model(model: str) -> SentenceTransformer:
     except Exception as e:
         embeddings_model = None
         raise ServiceUnavailableError(
-            f"Error: Failed to load embedding model: {model}", internal_message=repr(e)
+            f"Error: Failed to load embedding model: {model}",
+            internal_message=repr(e),
         )
 
     return emb_model
@@ -38,7 +42,9 @@ def load_embedding_model(model: str) -> SentenceTransformer:
 def get_embeddings_model() -> SentenceTransformer:
     global embeddings_model, st_model
     if st_model and not embeddings_model:
-        embeddings_model = load_embedding_model(st_model)  # lazy load the model
+        embeddings_model = load_embedding_model(
+            st_model
+        )  # lazy load the model
     return embeddings_model
 
 
@@ -62,7 +68,11 @@ def embeddings(input: list, encoding_format: str) -> dict:
 
     if encoding_format == "base64":
         data = [
-            {"object": "embedding", "embedding": float_list_to_base64(emb), "index": n}
+            {
+                "object": "embedding",
+                "embedding": float_list_to_base64(emb),
+                "index": n,
+            }
             for n, emb in enumerate(embeddings)
         ]
     else:

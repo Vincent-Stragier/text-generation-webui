@@ -7,4 +7,3 @@ Instruction
 Input
 
 ### Response:
-

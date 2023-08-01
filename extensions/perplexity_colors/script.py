@@ -1,7 +1,8 @@
+# -*- coding: utf-8 -*-
 import gradio
+import numpy as np
 import torch
 from transformers import LogitsProcessor
-import numpy as np
 
 from modules import shared
 
@@ -66,14 +67,20 @@ class PerplexityLogits(LogitsProcessor):
 
         # Get top 5 probabilities
         top_tokens_and_probs = torch.topk(probs, 5)
-        top_probs = top_tokens_and_probs.values.cpu().numpy().astype(float).tolist()
-        top_token_ids = top_tokens_and_probs.indices.cpu().numpy().astype(int).tolist()
+        top_probs = (
+            top_tokens_and_probs.values.cpu().numpy().astype(float).tolist()
+        )
+        top_token_ids = (
+            top_tokens_and_probs.indices.cpu().numpy().astype(int).tolist()
+        )
 
         self.top_token_ids_list.append(top_token_ids)
         self.top_probs_list.append(top_probs)
 
         probs = probs.cpu().numpy().flatten()
-        self.last_probs = probs  # Need to keep this as a reference for top probs
+        self.last_probs = (
+            probs  # Need to keep this as a reference for top probs
+        )
 
         # Doesn't actually modify the logits!
         return scores
@@ -103,18 +110,22 @@ def output_modifier(text):
     top_probs_list = ppl_logits_processor.top_probs_list[:-1]
     # Remove first element of generated_token_ids, generated_tokens, selected_probs because they are for the last token of the prompt
     gen_token_ids = ppl_logits_processor.generated_token_ids[1:]
-    gen_tokens = [shared.tokenizer.decode(token_id) for token_id in gen_token_ids]
+    gen_tokens = [
+        shared.tokenizer.decode(token_id) for token_id in gen_token_ids
+    ]
     sel_probs = ppl_logits_processor.selected_probs[1:]
 
-    end_part = (
-        "</span>"  # Helps with finding the index after replacing part of the text.
-    )
+    end_part = "</span>"  # Helps with finding the index after replacing part of the text.
     in_code = False  # Since the <span> tags mess up code blocks, avoid coloring while inside a code block, based on finding tokens with '`' in them
 
     if params["color_by_probability"] and params["color_by_perplexity"]:
         i = 0
         for token, prob, ppl, top_tokens, top_probs in zip(
-            gen_tokens, sel_probs, perplexities, top_tokens_list, top_probs_list
+            gen_tokens,
+            sel_probs,
+            perplexities,
+            top_tokens_list,
+            top_probs_list,
         ):
             if "`" in token:
                 in_code = not in_code
@@ -183,7 +194,9 @@ def probability_color_scale(prob):
 
 # Red component only, white for 0 perplexity (sorry if you're not in dark mode)
 def perplexity_color_scale(ppl):
-    value = hex(max(int(255.0 - params["ppl_scale"] * (float(ppl) - 1.0)), 0))[2:]
+    value = hex(max(int(255.0 - params["ppl_scale"] * (float(ppl) - 1.0)), 0))[
+        2:
+    ]
     if len(value) < 2:
         value = "0" * (2 - len(value)) + value
     return "ff" + value + value
@@ -193,7 +206,9 @@ def perplexity_color_scale(ppl):
 def probability_perplexity_color_scale(prob, ppl):
     rv = 0
     gv = 0
-    bv = hex(min(max(int(params["ppl_scale"] * (float(ppl) - 1.0)), 0), 255))[2:]
+    bv = hex(min(max(int(params["ppl_scale"] * (float(ppl) - 1.0)), 0), 255))[
+        2:
+    ]
     if len(bv) < 2:
         bv = "0" * (2 - len(bv)) + bv
     if prob <= 0.5:
@@ -239,7 +254,9 @@ def ui():
     def update_color_by_ppl_check(x):
         params.update({"color_by_perplexity": x})
 
-    color_by_ppl_check.change(update_color_by_ppl_check, color_by_ppl_check, None)
+    color_by_ppl_check.change(
+        update_color_by_ppl_check, color_by_ppl_check, None
+    )
 
     color_by_prob_check = gradio.Checkbox(
         value=False,
@@ -250,7 +267,9 @@ def ui():
     def update_color_by_prob_check(x):
         params.update({"color_by_probability": x})
 
-    color_by_prob_check.change(update_color_by_prob_check, color_by_prob_check, None)
+    color_by_prob_check.change(
+        update_color_by_prob_check, color_by_prob_check, None
+    )
 
     # Doesn't work yet...
     """

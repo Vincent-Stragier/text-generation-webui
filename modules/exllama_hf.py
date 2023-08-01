@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
@@ -56,7 +57,9 @@ class ExllamaHF(PreTrainedModel):
         use_cache = kwargs.get("use_cache", True)
         labels = kwargs.get("labels", None)
         seq = kwargs["input_ids"][0].tolist()
-        cache = kwargs["past_key_values"] if "past_key_values" in kwargs else None
+        cache = (
+            kwargs["past_key_values"] if "past_key_values" in kwargs else None
+        )
 
         if labels is None:
             if cache is None:
@@ -70,7 +73,9 @@ class ExllamaHF(PreTrainedModel):
                 )
 
             logits = self.ex_model.forward(
-                torch.tensor([seq[-1:]], dtype=torch.long), cache, lora=self.lora
+                torch.tensor([seq[-1:]], dtype=torch.long),
+                cache,
+                lora=self.lora,
             ).to(kwargs["input_ids"].device)
         else:
             if cache is None:
@@ -98,7 +103,9 @@ class ExllamaHF(PreTrainedModel):
             loss = loss_fct(shift_logits, shift_labels)
 
         return CausalLMOutputWithPast(
-            logits=logits, past_key_values=cache if use_cache else None, loss=loss
+            logits=logits,
+            past_key_values=cache if use_cache else None,
+            loss=loss,
         )
 
     @classmethod
@@ -114,9 +121,9 @@ class ExllamaHF(PreTrainedModel):
         if isinstance(pretrained_model_name_or_path, str):
             pretrained_model_name_or_path = Path(pretrained_model_name_or_path)
 
-        pretrained_model_name_or_path = Path(f"{shared.args.model_dir}") / Path(
-            pretrained_model_name_or_path
-        )
+        pretrained_model_name_or_path = Path(
+            f"{shared.args.model_dir}"
+        ) / Path(pretrained_model_name_or_path)
         config = ExLlamaConfig(pretrained_model_name_or_path / "config.json")
 
         # from 'oobabooga/text-generation-webui/modules/exllama.py'

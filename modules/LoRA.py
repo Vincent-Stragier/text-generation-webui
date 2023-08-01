@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from pathlib import Path
 
 import torch
@@ -60,12 +61,16 @@ def add_lora_exllama(lora_names):
         )
         if shared.model.__class__.__name__ == "ExllamaModel":
             lora = ExLlamaLora(
-                shared.model.model, str(lora_config_path), str(lora_adapter_path)
+                shared.model.model,
+                str(lora_config_path),
+                str(lora_adapter_path),
             )
             shared.model.generator.lora = lora
         else:
             lora = ExLlamaLora(
-                shared.model.ex_model, str(lora_config_path), str(lora_adapter_path)
+                shared.model.ex_model,
+                str(lora_config_path),
+                str(lora_adapter_path),
             )
             shared.model.lora = lora
 
@@ -109,7 +114,9 @@ def add_lora_autogptq(lora_names):
                 shared.model_name, ", ".join([lora_names[0]])
             )
         )
-        shared.model = get_gptq_peft_model(shared.model, peft_config, lora_path)
+        shared.model = get_gptq_peft_model(
+            shared.model, peft_config, lora_path
+        )
         shared.lora_names = [lora_names[0]]
         return
 
@@ -127,7 +134,9 @@ def add_lora_transformers(lora_names):
     if len(removed_set) == 0 and len(prior_set) > 0:
         logger.info(f"Adding the LoRA(s) named {added_set} to the model...")
         for lora in added_set:
-            shared.model.load_adapter(Path(f"{shared.args.lora_dir}/{lora}"), lora)
+            shared.model.load_adapter(
+                Path(f"{shared.args.lora_dir}/{lora}"), lora
+            )
 
         return
 
@@ -163,7 +172,9 @@ def add_lora_transformers(lora_names):
             **params,
         )
         for lora in lora_names[1:]:
-            shared.model.load_adapter(Path(f"{shared.args.lora_dir}/{lora}"), lora)
+            shared.model.load_adapter(
+                Path(f"{shared.args.lora_dir}/{lora}"), lora
+            )
 
         shared.lora_names = lora_names
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import time
 from abc import abstractmethod
 from typing import List, Tuple
@@ -22,24 +23,50 @@ class LLaVA_v0_Pipeline(AbstractMultimodalPipeline):
         self.clip_dtype = self._get_dtype("vision_bits", params)
         self.projector_device = self._get_device("projector_device", params)
         self.projector_dtype = self._get_dtype("projector_bits", params)
-        self.image_processor, self.vision_tower, self.mm_projector = self._load_models()
+        (
+            self.image_processor,
+            self.vision_tower,
+            self.mm_projector,
+        ) = self._load_models()
 
     def _load_models(self):
         start_ts = time.time()
 
-        logger.info(f"LLaVA - Loading CLIP from {LLaVA_v0_Pipeline.CLIP_REPO} as {self.clip_dtype} on {self.clip_device}...")
-        image_processor = CLIPImageProcessor.from_pretrained(LLaVA_v0_Pipeline.CLIP_REPO, torch_dtype=self.clip_dtype)
-        vision_tower = CLIPVisionModel.from_pretrained(LLaVA_v0_Pipeline.CLIP_REPO, torch_dtype=self.clip_dtype).to(self.clip_device)
+        logger.info(
+            f"LLaVA - Loading CLIP from {LLaVA_v0_Pipeline.CLIP_REPO} as {self.clip_dtype} on {self.clip_device}..."
+        )
+        image_processor = CLIPImageProcessor.from_pretrained(
+            LLaVA_v0_Pipeline.CLIP_REPO, torch_dtype=self.clip_dtype
+        )
+        vision_tower = CLIPVisionModel.from_pretrained(
+            LLaVA_v0_Pipeline.CLIP_REPO, torch_dtype=self.clip_dtype
+        ).to(self.clip_device)
 
-        logger.info(f"LLaVA - Loading projector from {self.llava_projector_repo()} as {self.projector_dtype} on {self.projector_device}...")
-        projector_path = hf_hub_download(self.llava_projector_repo(), self.llava_projector_filename())
+        logger.info(
+            f"LLaVA - Loading projector from {self.llava_projector_repo()} as {self.projector_dtype} on {self.projector_device}..."
+        )
+        projector_path = hf_hub_download(
+            self.llava_projector_repo(), self.llava_projector_filename()
+        )
         mm_projector = torch.nn.Linear(*self.llava_projector_shape())
         projector_data = torch.load(projector_path)
-        mm_projector.weight = torch.nn.Parameter(projector_data['model.mm_projector.weight'].to(dtype=self.projector_dtype), False)
-        mm_projector.bias = torch.nn.Parameter(projector_data['model.mm_projector.bias'].to(dtype=self.projector_dtype), False)
+        mm_projector.weight = torch.nn.Parameter(
+            projector_data["model.mm_projector.weight"].to(
+                dtype=self.projector_dtype
+            ),
+            False,
+        )
+        mm_projector.bias = torch.nn.Parameter(
+            projector_data["model.mm_projector.bias"].to(
+                dtype=self.projector_dtype
+            ),
+            False,
+        )
         mm_projector = mm_projector.to(self.projector_device)
 
-        logger.info(f"LLaVA supporting models loaded, took {time.time() - start_ts:.2f} seconds")
+        logger.info(
+            f"LLaVA supporting models loaded, took {time.time() - start_ts:.2f} seconds"
+        )
         return image_processor, vision_tower, mm_projector
 
     @staticmethod
@@ -56,26 +83,38 @@ class LLaVA_v0_Pipeline(AbstractMultimodalPipeline):
 
     @staticmethod
     def embed_tokens(input_ids: torch.Tensor) -> torch.Tensor:
-        if hasattr(shared.model.model, 'embed_tokens'):
+        if hasattr(shared.model.model, "embed_tokens"):
             func = shared.model.model.embed_tokens
         else:
             func = shared.model.model.model.embed_tokens  # AutoGPTQ case
 
-        return func(input_ids).to(shared.model.device, dtype=shared.model.dtype)
+        return func(input_ids).to(
+            shared.model.device, dtype=shared.model.dtype
+        )
 
     @staticmethod
     def placeholder_embeddings() -> torch.Tensor:
-        return LLaVA_v0_Pipeline.embed_tokens(encode("<im_patch>"*256, add_bos_token=False)[0])
+        return LLaVA_v0_Pipeline.embed_tokens(
+            encode("<im_patch>" * 256, add_bos_token=False)[0]
+        )
 
     def embed_images(self, images: List[Image.Image]) -> torch.Tensor:
-        images = self.image_processor(images, return_tensors='pt')['pixel_values']
+        images = self.image_processor(images, return_tensors="pt")[
+            "pixel_values"
+        ]
         images = images.to(self.clip_device, dtype=self.clip_dtype)
 
         with torch.no_grad():
-            image_forward_outs = self.vision_tower(images, output_hidden_states=True)
+            image_forward_outs = self.vision_tower(
+                images, output_hidden_states=True
+            )
             select_hidden_state_layer = -2
-            select_hidden_state = image_forward_outs.hidden_states[select_hidden_state_layer]
-            image_features = select_hidden_state[:, 1:].to(self.projector_device, dtype=self.projector_dtype)
+            select_hidden_state = image_forward_outs.hidden_states[
+                select_hidden_state_layer
+            ]
+            image_features = select_hidden_state[:, 1:].to(
+                self.projector_device, dtype=self.projector_dtype
+            )
             image_features = self.mm_projector(image_features)
         return image_features.to(shared.model.device, dtype=shared.model.dtype)
 

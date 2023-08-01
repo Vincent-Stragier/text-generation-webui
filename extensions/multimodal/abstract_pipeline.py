@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
@@ -55,8 +56,12 @@ class AbstractMultimodalPipeline(ABC):
 
     def _get_device(self, setting_name: str, params: dict):
         if params[setting_name] is None:
-            return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            return torch.device(
+                "cuda:0" if torch.cuda.is_available() else "cpu"
+            )
         return torch.device(params[setting_name])
 
     def _get_dtype(self, setting_name: str, params: dict):
-        return torch.float32 if int(params[setting_name]) == 32 else torch.float16
+        return (
+            torch.float32 if int(params[setting_name]) == 32 else torch.float16
+        )

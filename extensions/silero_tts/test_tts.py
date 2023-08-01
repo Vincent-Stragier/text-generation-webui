@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import time
 from pathlib import Path
 
@@ -188,7 +189,9 @@ def output_modifier(string):
     if string == "":
         string = "*Empty reply, try regenerating*"
     else:
-        output_file = Path(f"extensions/silero_tts/outputs/test_{int(time.time())}.wav")
+        output_file = Path(
+            f"extensions/silero_tts/outputs/test_{int(time.time())}.wav"
+        )
         prosody = '<prosody rate="{}" pitch="{}">'.format(
             params["voice_speed"], params["voice_pitch"]
         )
@@ -201,12 +204,12 @@ def output_modifier(string):
         )
 
         autoplay = "autoplay" if params["autoplay"] else ""
-        string = (
-            f'<audio src="file/{output_file.as_posix()}" controls {autoplay}></audio>'
-        )
+        string = f'<audio src="file/{output_file.as_posix()}" controls {autoplay}></audio>'
 
         if params["show_text"]:
-            string += f"\n\n{original_string}\n\nProcessed:\n{processed_string}"
+            string += (
+                f"\n\n{original_string}\n\nProcessed:\n{processed_string}"
+            )
 
     print(string)
 

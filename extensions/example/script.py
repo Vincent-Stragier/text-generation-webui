@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 An example of extension. It does nothing, but you can add transformations
 before the return statements to customize the webui behavior.
@@ -8,13 +9,10 @@ generation time.
 """
 
 import torch
-from modules import chat
-from modules.text_generation import (
-    decode,
-    encode,
-    generate_reply,
-)
 from transformers import LogitsProcessor
+
+from modules import chat
+from modules.text_generation import decode, encode, generate_reply
 
 params = {
     "display_name": "Example Extension",

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Downloads models from Hugging Face to models/username_modelname.
 
@@ -27,13 +28,21 @@ class ModelDownloader:
         self.s = requests.Session()
         if max_retries:
             self.s.mount(
-                "https://cdn-lfs.huggingface.co", HTTPAdapter(max_retries=max_retries)
+                "https://cdn-lfs.huggingface.co",
+                HTTPAdapter(max_retries=max_retries),
             )
-            self.s.mount("https://huggingface.co", HTTPAdapter(max_retries=max_retries))
-        if os.getenv("HF_USER") is not None and os.getenv("HF_PASS") is not None:
+            self.s.mount(
+                "https://huggingface.co", HTTPAdapter(max_retries=max_retries)
+            )
+        if (
+            os.getenv("HF_USER") is not None
+            and os.getenv("HF_PASS") is not None
+        ):
             self.s.auth = (os.getenv("HF_USER"), os.getenv("HF_PASS"))
         if os.getenv("HF_TOKEN") is not None:
-            self.s.headers = {"authorization": f'Bearer {os.getenv("HF_TOKEN")}'}
+            self.s.headers = {
+                "authorization": f'Bearer {os.getenv("HF_TOKEN")}'
+            }
 
     def sanitize_model_and_branch_names(self, model, branch):
         if model[-1] == "/":
@@ -50,7 +59,9 @@ class ModelDownloader:
 
         return model, branch
 
-    def get_download_links_from_huggingface(self, model, branch, text_only=False):
+    def get_download_links_from_huggingface(
+        self, model, branch, text_only=False
+    ):
         base = "https://huggingface.co"
         page = f"/api/models/{model}/tree/{branch}"
         cursor = b""
@@ -64,7 +75,9 @@ class ModelDownloader:
         has_safetensors = False
         is_lora = False
         while True:
-            url = f"{base}{page}" + (f"?cursor={cursor.decode()}" if cursor else "")
+            url = f"{base}{page}" + (
+                f"?cursor={cursor.decode()}" if cursor else ""
+            )
             r = self.s.get(url, timeout=10)
             r.raise_for_status()
             content = r.content
@@ -80,14 +93,27 @@ class ModelDownloader:
                 ):
                     is_lora = True
 
-                is_pytorch = re.match("(pytorch|adapter|gptq)_model.*\.bin", fname)
-                is_safetensors = re.match(".*\.safetensors", fname)
-                is_pt = re.match(".*\.pt", fname)
-                is_ggml = re.match(".*ggml.*\.bin", fname)
-                is_tokenizer = re.match("(tokenizer|ice|spiece).*\.model", fname)
-                is_text = re.match(".*\.(txt|json|py|md)", fname) or is_tokenizer
+                is_pytorch = re.match(
+                    r"(pytorch|adapter|gptq)_model.*\.bin", fname
+                )
+                is_safetensors = re.match(r".*\.safetensors", fname)
+                is_pt = re.match(r".*\.pt", fname)
+                is_ggml = re.match(r".*ggml.*\.bin", fname)
+                is_tokenizer = re.match(
+                    r"(tokenizer|ice|spiece).*\.model", fname
+                )
+                is_text = (
+                    re.match(r".*\.(txt|json|py|md)", fname) or is_tokenizer
+                )
                 if any(
-                    (is_pytorch, is_safetensors, is_pt, is_ggml, is_tokenizer, is_text)
+                    (
+                        is_pytorch,
+                        is_safetensors,
+                        is_pt,
+                        is_ggml,
+                        is_tokenizer,
+                        is_text,
+                    )
                 ):
                     if "lfs" in dict[i]:
                         sha256.append([fname, dict[i]["lfs"]["oid"]])
@@ -117,7 +143,9 @@ class ModelDownloader:
                             classifications.append("ggml")
 
             cursor = (
-                base64.b64encode(f'{{"file_name":"{dict[-1]["path"]}"}}'.encode())
+                base64.b64encode(
+                    f'{{"file_name":"{dict[-1]["path"]}"}}'.encode()
+                )
                 + b":50"
             )
             cursor = base64.b64encode(cursor)
@@ -223,7 +251,10 @@ class ModelDownloader:
         # Downloading the files
         print(f"Downloading the model to {output_folder}")
         self.start_download_threads(
-            links, output_folder, start_from_scratch=start_from_scratch, threads=threads
+            links,
+            output_folder,
+            start_from_scratch=start_from_scratch,
+            threads=threads,
         )
 
     def check_model_files(self, model, branch, links, sha256, output_folder):
@@ -244,7 +275,9 @@ class ModelDownloader:
                     print(f"Checksum failed: {sha256[i][0]}  {sha256[i][1]}")
                     validated = False
                 else:
-                    print(f"Checksum validated: {sha256[i][0]}  {sha256[i][1]}")
+                    print(
+                        f"Checksum validated: {sha256[i][0]}  {sha256[i][1]}"
+                    )
 
         if validated:
             print("[+] Validated checksums of all model files!")
@@ -270,7 +303,9 @@ if __name__ == "__main__":
         help="Number of files to download simultaneously.",
     )
     parser.add_argument(
-        "--text-only", action="store_true", help="Only download text files (txt/json)."
+        "--text-only",
+        action="store_true",
+        help="Only download text files (txt/json).",
     )
     parser.add_argument(
         "--output",
@@ -279,10 +314,14 @@ if __name__ == "__main__":
         help="The folder where the model should be saved.",
     )
     parser.add_argument(
-        "--clean", action="store_true", help="Does not resume the previous download."
+        "--clean",
+        action="store_true",
+        help="Does not resume the previous download.",
     )
     parser.add_argument(
-        "--check", action="store_true", help="Validates the checksums of model files."
+        "--check",
+        action="store_true",
+        help="Validates the checksums of model files.",
     )
     parser.add_argument(
         "--max-retries",
@@ -304,7 +343,9 @@ if __name__ == "__main__":
     downloader = ModelDownloader(max_retries=args.max_retries)
     # Cleaning up the model/branch names
     try:
-        model, branch = downloader.sanitize_model_and_branch_names(model, branch)
+        model, branch = downloader.sanitize_model_and_branch_names(
+            model, branch
+        )
     except ValueError as err_branch:
         print(f"Error: {err_branch}")
         sys.exit()
@@ -321,7 +362,9 @@ if __name__ == "__main__":
 
     if args.check:
         # Check previously downloaded files
-        downloader.check_model_files(model, branch, links, sha256, output_folder)
+        downloader.check_model_files(
+            model, branch, links, sha256, output_folder
+        )
     else:
         # Download files
         downloader.download_model_files(

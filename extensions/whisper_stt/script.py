@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import gradio as gr
 import speech_recognition as sr
 
@@ -27,7 +28,9 @@ def do_stt(audio, whipser_model, whipser_language):
     r = sr.Recognizer()
 
     # Convert to AudioData
-    audio_data = sr.AudioData(sample_rate=audio[0], frame_data=audio[1], sample_width=4)
+    audio_data = sr.AudioData(
+        sample_rate=audio[0], frame_data=audio[1], sample_width=4
+    )
 
     try:
         transcription = r.recognize_whisper(
@@ -46,7 +49,9 @@ def auto_transcribe(audio, auto_submit, whipser_model, whipser_language):
         return "", ""
     transcription = do_stt(audio, whipser_model, whipser_language)
     if auto_submit:
-        input_hijack.update({"state": True, "value": [transcription, transcription]})
+        input_hijack.update(
+            {"state": True, "value": [transcription, transcription]}
+        )
 
     return transcription, None
 
@@ -196,6 +201,10 @@ def ui():
         lambda x: params.update({"whipser_model": x}), whipser_model, None
     )
     whipser_language.change(
-        lambda x: params.update({"whipser_language": x}), whipser_language, None
+        lambda x: params.update({"whipser_language": x}),
+        whipser_language,
+        None,
     )
-    auto_submit.change(lambda x: params.update({"auto_submit": x}), auto_submit, None)
+    auto_submit.change(
+        lambda x: params.update({"auto_submit": x}), auto_submit, None
+    )

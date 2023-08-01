@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import base64
 import copy
 import functools
@@ -19,7 +20,12 @@ from modules.text_generation import (
     get_encoded_length,
     get_max_prompt_length,
 )
-from modules.utils import delete_file, get_available_characters, replace_all, save_file
+from modules.utils import (
+    delete_file,
+    get_available_characters,
+    replace_all,
+    save_file,
+)
 
 
 def get_turn_substrings(state, instruct=False):
@@ -39,7 +45,9 @@ def get_turn_substrings(state, instruct=False):
     output = {
         "user_turn": template.split("<|bot|>")[0],
         "bot_turn": "<|bot|>" + template.split("<|bot|>")[1],
-        "user_turn_stripped": template.split("<|bot|>")[0].split("<|user-message|>")[0],
+        "user_turn_stripped": template.split("<|bot|>")[0].split(
+            "<|user-message|>"
+        )[0],
         "bot_turn_stripped": "<|bot|>"
         + template.split("<|bot|>")[1].split("<|bot-message|>")[0],
     }
@@ -70,7 +78,8 @@ def generate_chat_prompt(user_input, state, **kwargs):
     if state["mode"] == "chat-instruct":
         wrapper = ""
         command = state["chat-instruct_command"].replace(
-            "<|character|>", state["name2"] if not impersonate else state["name1"]
+            "<|character|>",
+            state["name2"] if not impersonate else state["name1"],
         )
         wrapper += state["context_instruct"]
         wrapper += all_substrings["instruct"]["user_turn"].replace(
@@ -86,7 +95,9 @@ def generate_chat_prompt(user_input, state, **kwargs):
             wrapper += history[-1][1]
         else:
             wrapper += apply_extensions(
-                "bot_prefix", substrings["bot_turn_stripped"].rstrip(" "), state
+                "bot_prefix",
+                substrings["bot_turn_stripped"].rstrip(" "),
+                state,
             )
     else:
         wrapper = "<|prompt|>"
@@ -95,7 +106,9 @@ def generate_chat_prompt(user_input, state, **kwargs):
     min_rows = 3
     i = len(history) - 1
     rows = [
-        state["context_instruct"] if is_instruct else f"{state['context'].strip()}\n"
+        state["context_instruct"]
+        if is_instruct
+        else f"{state['context'].strip()}\n"
     ]
     while (
         i >= 0
@@ -104,7 +117,9 @@ def generate_chat_prompt(user_input, state, **kwargs):
     ):
         if _continue and i == len(history) - 1:
             if state["mode"] != "chat-instruct":
-                rows.insert(1, substrings["bot_turn_stripped"] + history[i][1].strip())
+                rows.insert(
+                    1, substrings["bot_turn_stripped"] + history[i][1].strip()
+                )
         else:
             rows.insert(
                 1,
@@ -148,7 +163,9 @@ def generate_chat_prompt(user_input, state, **kwargs):
         if state["mode"] != "chat-instruct":
             rows.append(
                 apply_extensions(
-                    "bot_prefix", substrings["bot_turn_stripped"].rstrip(" "), state
+                    "bot_prefix",
+                    substrings["bot_turn_stripped"].rstrip(" "),
+                    state,
                 )
             )
 
@@ -170,7 +187,9 @@ def get_stopping_strings(state):
     stopping_strings = []
     if state["mode"] in ["instruct", "chat-instruct"]:
         stopping_strings += [
-            state["turn_template"].split("<|user-message|>")[1].split("<|bot|>")[0]
+            state["turn_template"]
+            .split("<|user-message|>")[1]
+            .split("<|bot|>")[0]
             + "<|bot|>",
             state["turn_template"].split("<|bot-message|>")[1] + "<|user|>",
         ]
@@ -217,7 +236,9 @@ def chatbot_wrapper(
     # Preparing the input
     if not any((regenerate, _continue)):
         visible_text = text
-        text, visible_text = apply_extensions("chat_input", text, visible_text, state)
+        text, visible_text = apply_extensions(
+            "chat_input", text, visible_text, state
+        )
         text = apply_extensions("input", text, state)
 
         # *Is typing...*
@@ -228,7 +249,10 @@ def chatbot_wrapper(
                 "internal": output["internal"],
             }
     else:
-        text, visible_text = output["internal"][-1][0], output["visible"][-1][0]
+        text, visible_text = (
+            output["internal"][-1][0],
+            output["visible"][-1][0],
+        )
         if regenerate:
             output["visible"].pop()
             output["internal"].pop()
@@ -254,7 +278,9 @@ def chatbot_wrapper(
         "history": output,
     }
 
-    prompt = apply_extensions("custom_generate_chat_prompt", text, state, **kwargs)
+    prompt = apply_extensions(
+        "custom_generate_chat_prompt", text, state, **kwargs
+    )
     if prompt is None:
         prompt = generate_chat_prompt(text, state, **kwargs)
 
@@ -273,7 +299,9 @@ def chatbot_wrapper(
             reply = cumulative_reply + reply
 
             # Extract the reply
-            visible_reply = re.sub("(<USER>|<user>|{{user}})", state["name1"], reply)
+            visible_reply = re.sub(
+                "(<USER>|<user>|{{user}})", state["name1"], reply
+            )
 
             # We need this global variable to handle the Stop event,
             # otherwise gradio gets confused
@@ -292,12 +320,18 @@ def chatbot_wrapper(
 
             if _continue:
                 output["internal"][-1] = [text, last_reply[0] + reply]
-                output["visible"][-1] = [visible_text, last_reply[1] + visible_reply]
+                output["visible"][-1] = [
+                    visible_text,
+                    last_reply[1] + visible_reply,
+                ]
                 if is_stream:
                     yield output
             elif not (j == 0 and visible_reply.strip() == ""):
                 output["internal"][-1] = [text, reply.lstrip(" ")]
-                output["visible"][-1] = [visible_text, visible_reply.lstrip(" ")]
+                output["visible"][-1] = [
+                    visible_text,
+                    visible_reply.lstrip(" "),
+                ]
                 if is_stream:
                     yield output
 
@@ -352,9 +386,9 @@ def generate_chat_reply(
     history = state["history"]
     if regenerate or _continue:
         text = ""
-        if (len(history["visible"]) == 1 and not history["visible"][0][0]) or len(
-            history["internal"]
-        ) == 0:
+        if (
+            len(history["visible"]) == 1 and not history["visible"][0][0]
+        ) or len(history["internal"]) == 0:
             yield history
             return
 
@@ -382,10 +416,16 @@ def generate_chat_reply_wrapper(
         send_dummy_reply(start_with, state)
 
     for i, history in enumerate(
-        generate_chat_reply(text, state, regenerate, _continue, loading_message=True)
+        generate_chat_reply(
+            text, state, regenerate, _continue, loading_message=True
+        )
     ):
         yield chat_html_wrapper(
-            history, state["name1"], state["name2"], state["mode"], state["chat_style"]
+            history,
+            state["name1"],
+            state["name2"],
+            state["mode"],
+            state["chat_style"],
         ), history
 
 
@@ -446,7 +486,9 @@ def clear_chat_log(state):
     if mode != "instruct":
         if greeting != "":
             history["internal"] += [["<|BEGIN-VISIBLE-CHAT|>", greeting]]
-            history["visible"] += [["", apply_extensions("output", greeting, state)]]
+            history["visible"] += [
+                ["", apply_extensions("output", greeting, state)]
+            ]
 
     return history
 
@@ -482,7 +524,11 @@ def save_history_at_user_request(history, character, mode):
         return f"logs/{character or ''}{'_' if character else ''}{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
 
     path = None
-    if mode in ["chat", "chat-instruct"] and character not in ["", "None", None]:
+    if mode in ["chat", "chat-instruct"] and character not in [
+        "",
+        "None",
+        None,
+    ]:
         path = make_timestamp_path(character)
     else:
         # Try to use mode as the file name, otherwise just use the timestamp
@@ -526,7 +572,9 @@ def load_persistent_history(state):
         history = {"internal": [], "visible": []}
         if greeting != "":
             history["internal"] += [["<|BEGIN-VISIBLE-CHAT|>", greeting]]
-            history["visible"] += [["", apply_extensions("output", greeting, state)]]
+            history["visible"] += [
+                ["", apply_extensions("output", greeting, state)]
+            ]
 
     return history
 
@@ -575,7 +623,11 @@ def load_character(character, name1, name2, instruct=False):
         Path("cache/pfp_character.png").unlink()
 
     if character not in ["None", "", None]:
-        folder = "characters" if not instruct else "characters/instruction-following"
+        folder = (
+            "characters"
+            if not instruct
+            else "characters/instruction-following"
+        )
         picture = generate_pfp_cache(character)
         filepath = None
         for extension in ["yml", "yaml", "json"]:
@@ -624,7 +676,9 @@ def load_character(character, name1, name2, instruct=False):
             "world_scenario",
         ]:
             if field in data:
-                data[field] = replace_character_names(data[field], name1, name2)
+                data[field] = replace_character_names(
+                    data[field], name1, name2
+                )
 
         if "context" in data:
             context = data["context"]
@@ -649,7 +703,14 @@ def load_character(character, name1, name2, instruct=False):
         greeting = shared.settings["greeting"]
         turn_template = shared.settings["turn_template"]
 
-    return name1, name2, picture, greeting, context, turn_template.replace("\n", r"\n")
+    return (
+        name1,
+        name2,
+        picture,
+        greeting,
+        context,
+        turn_template.replace("\n", r"\n"),
+    )
 
 
 @functools.cache
@@ -658,7 +719,9 @@ def load_character_memoized(character, name1, name2, instruct=False):
 
 
 def upload_character(json_file, img, tavern=False):
-    json_file = json_file if type(json_file) == str else json_file.decode("utf-8")
+    json_file = (
+        json_file if type(json_file) == str else json_file.decode("utf-8")
+    )
     data = json.loads(json_file)
     outfile_name = data["char_name"]
     i = 1
@@ -669,7 +732,9 @@ def upload_character(json_file, img, tavern=False):
     if tavern:
         outfile_name = f"TavernAI-{outfile_name}"
 
-    with open(Path(f"characters/{outfile_name}.json"), "w", encoding="utf-8") as f:
+    with open(
+        Path(f"characters/{outfile_name}.json"), "w", encoding="utf-8"
+    ) as f:
         f.write(json_file)
 
     if img is not None:
@@ -697,7 +762,12 @@ def check_tavern_character(img):
     _json = json.loads(decoded_string)
     if "data" in _json:
         _json = _json["data"]
-    return _json["name"], _json["description"], _json, gr.update(interactive=True)
+    return (
+        _json["name"],
+        _json["description"],
+        _json,
+        gr.update(interactive=True),
+    )
 
 
 def upload_your_profile_picture(img):
@@ -739,7 +809,9 @@ def generate_instruction_template_yaml(user, bot, context, turn_template):
 
 def save_character(name, greeting, context, picture, filename):
     if filename == "":
-        logger.error("The filename is empty, so the character will not be saved.")
+        logger.error(
+            "The filename is empty, so the character will not be saved."
+        )
         return
 
     data = generate_character_yaml(name, greeting, context)

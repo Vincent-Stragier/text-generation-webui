@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import traceback
 from functools import partial
 from inspect import signature
@@ -35,7 +36,9 @@ def load_extensions():
                 exec(f"import extensions.{name}.script")
                 extension = getattr(extensions, name).script
                 apply_settings(extension, name)
-                if extension not in setup_called and hasattr(extension, "setup"):
+                if extension not in setup_called and hasattr(
+                    extension, "setup"
+                ):
                     setup_called.add(extension)
                     extension.setup()
 
@@ -104,22 +107,28 @@ def _apply_history_modifier_extensions(history):
 
 
 # Extension functions that override the default tokenizer output - The order of execution is not defined
-def _apply_tokenizer_extensions(function_name, state, prompt, input_ids, input_embeds):
+def _apply_tokenizer_extensions(
+    function_name, state, prompt, input_ids, input_embeds
+):
     for extension, _ in iterator():
         if hasattr(extension, function_name):
-            prompt, input_ids, input_embeds = getattr(extension, function_name)(
-                state, prompt, input_ids, input_embeds
-            )
+            prompt, input_ids, input_embeds = getattr(
+                extension, function_name
+            )(state, prompt, input_ids, input_embeds)
 
     return prompt, input_ids, input_embeds
 
 
 # Allow extensions to add their own logits processors to the stack being run.
 # Each extension would call `processor_list.append({their LogitsProcessor}())`.
-def _apply_logits_processor_extensions(function_name, processor_list, input_ids):
+def _apply_logits_processor_extensions(
+    function_name, processor_list, input_ids
+):
     for extension, _ in iterator():
         if hasattr(extension, function_name):
-            result = getattr(extension, function_name)(processor_list, input_ids)
+            result = getattr(extension, function_name)(
+                processor_list, input_ids
+            )
             if type(result) is list:
                 processor_list = result
 
@@ -167,7 +176,8 @@ def create_extensions_block():
     to_display = []
     for extension, name in iterator():
         if hasattr(extension, "ui") and not (
-            hasattr(extension, "params") and extension.params.get("is_tab", False)
+            hasattr(extension, "params")
+            and extension.params.get("is_tab", False)
         ):
             to_display.append((extension, name))
 
@@ -186,9 +196,12 @@ def create_extensions_block():
 def create_extensions_tabs():
     for extension, name in iterator():
         if hasattr(extension, "ui") and (
-            hasattr(extension, "params") and extension.params.get("is_tab", False)
+            hasattr(extension, "params")
+            and extension.params.get("is_tab", False)
         ):
-            display_name = getattr(extension, "params", {}).get("display_name", name)
+            display_name = getattr(extension, "params", {}).get(
+                "display_name", name
+            )
             with gr.Tab(display_name, elem_classes="extension-tab"):
                 extension.ui()
 

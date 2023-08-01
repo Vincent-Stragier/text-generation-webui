@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
 import time
+
 import numpy as np
 from numpy.linalg import norm
-from extensions.openai.embeddings import get_embeddings
 
+from extensions.openai.embeddings import get_embeddings
 
 moderations_disabled = False  # return 0/false
 category_embeddings = None
@@ -68,10 +70,16 @@ def moderations(input):
     for in_str in input:
         for ine in get_embeddings([in_str]):
             category_scores = dict(
-                [(C, mod_score(category_embeddings[C], ine)) for C in categories]
+                [
+                    (C, mod_score(category_embeddings[C], ine))
+                    for C in categories
+                ]
             )
             category_flags = dict(
-                [(C, bool(category_scores[C] > flag_threshold)) for C in categories]
+                [
+                    (C, bool(category_scores[C] > flag_threshold))
+                    for C in categories
+                ]
             )
             flagged = any(category_flags.values())
 

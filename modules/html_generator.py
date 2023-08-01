@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import re
 import time
@@ -11,13 +12,17 @@ from modules.utils import get_available_chat_styles
 # This is to store the paths to the thumbnails of the profile pictures
 image_cache = {}
 
-with open(Path(__file__).resolve().parent / "../css/html_readable_style.css", "r") as f:
+with open(
+    Path(__file__).resolve().parent / "../css/html_readable_style.css", "r"
+) as f:
     readable_css = f.read()
 with open(
     Path(__file__).resolve().parent / "../css/html_4chan_style.css", "r"
 ) as css_f:
     _4chan_css = css_f.read()
-with open(Path(__file__).resolve().parent / "../css/html_instruct_style.css", "r") as f:
+with open(
+    Path(__file__).resolve().parent / "../css/html_instruct_style.css", "r"
+) as f:
     instruct_css = f.read()
 
 # Custom chat styles
@@ -44,7 +49,9 @@ def replace_blockquote(m):
 
 def convert_to_markdown(string):
     # Blockquote
-    pattern = re.compile(r"\\begin{blockquote}(.*?)\\end{blockquote}", re.DOTALL)
+    pattern = re.compile(
+        r"\\begin{blockquote}(.*?)\\end{blockquote}", re.DOTALL
+    )
     string = pattern.sub(replace_blockquote, string)
 
     # Code
@@ -59,7 +66,9 @@ def convert_to_markdown(string):
             is_code = not is_code
 
         result += line
-        if is_code or line.startswith("|"):  # Don't add an extra \n for tables or code
+        if is_code or line.startswith(
+            "|"
+        ):  # Don't add an extra \n for tables or code
             result += "\n"
         else:
             result += "\n\n"
@@ -73,7 +82,9 @@ def convert_to_markdown(string):
 
 def generate_basic_html(string):
     string = convert_to_markdown(string)
-    string = f'<style>{readable_css}</style><div class="container">{string}</div>'
+    string = (
+        f'<style>{readable_css}</style><div class="container">{string}</div>'
+    )
     return string
 
 
@@ -119,7 +130,9 @@ def generate_4chan_html(f):
             posts[i] = f'<div class="reply">{posts[i]}</div>\n'
 
     output = ""
-    output += f'<style>{_4chan_css}</style><div id="parent"><div id="container">'
+    output += (
+        f'<style>{_4chan_css}</style><div id="parent"><div id="container">'
+    )
     for post in posts:
         output += post
     output += "</div></div>"
@@ -142,7 +155,8 @@ def generate_4chan_html(f):
 
 def make_thumbnail(image):
     image = image.resize(
-        (350, round(image.size[1] / image.size[0] * 350)), Image.Resampling.LANCZOS
+        (350, round(image.size[1] / image.size[0] * 350)),
+        Image.Resampling.LANCZOS,
     )
     if image.size[1] > 470:
         image = ImageOps.fit(image, (350, 470), Image.LANCZOS)

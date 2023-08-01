@@ -1,4 +1,4 @@
-SpeechRecognition==3.10.0
+ffmpeg
 openai-whisper
 soundfile
-ffmpeg
+SpeechRecognition==3.10.0

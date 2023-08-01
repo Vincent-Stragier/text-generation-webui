@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import inspect
 import re
 import sys
@@ -89,7 +90,9 @@ def _load_quant(
         if "faster" in gptq_args:
             make_quant_kwargs["faster"] = faster_kernel
         if "kernel_switch_threshold" in gptq_args:
-            make_quant_kwargs["kernel_switch_threshold"] = kernel_switch_threshold
+            make_quant_kwargs[
+                "kernel_switch_threshold"
+            ] = kernel_switch_threshold
 
         make_quant(**make_quant_kwargs)
     else:
@@ -131,7 +134,9 @@ def find_quantized_model_file(model_name):
             f"{shared.args.model_dir}/{model_name}{hyphen}{shared.args.wbits}bit{group}{ext}"
         )
         for group in (
-            [f"-{shared.args.groupsize}g", ""] if shared.args.groupsize > 0 else [""]
+            [f"-{shared.args.groupsize}g", ""]
+            if shared.args.groupsize > 0
+            else [""]
         )
         for ext in [".safetensors", ".pt"]
         for hyphen in ["-", f"/{model_name}-", "/"]
@@ -225,7 +230,9 @@ def load_quantized(model_name):
         # accelerate offload (doesn't work properly)
         if shared.args.gpu_memory or torch.cuda.device_count() > 1:
             if shared.args.gpu_memory:
-                memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
+                memory_map = list(
+                    map(lambda x: x.strip(), shared.args.gpu_memory)
+                )
                 max_cpu_memory = (
                     shared.args.cpu_memory.strip()
                     if shared.args.cpu_memory is not None
@@ -253,7 +260,8 @@ def load_quantized(model_name):
                 no_split_module_classes=["LlamaDecoderLayer"],
             )
             logger.info(
-                "Using the following device map for the quantized model:", device_map
+                "Using the following device map for the quantized model:",
+                device_map,
             )
             # https://huggingface.co/docs/accelerate/package_reference/big_modeling#accelerate.dispatch_model
             model = accelerate.dispatch_model(
